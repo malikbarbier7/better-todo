@@ -5,27 +5,20 @@ import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle, ListTodo, Plus, Repeat, Quote } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from 'next/navigation'
 
 export function LandingPage() {
-  const router = useRouter()
-
-  const handleLearnMore = () => {
-    router.push('/features')
-  }
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="w-full px-4 lg:px-6 h-14 flex items-center">
         <Link className="flex items-center justify-center" href="#">
-          <ListTodo className="h-6 w-6 mr-2" />
-          <span className="font-bold">Better Todo</span>
+          <ListTodo className="h-6 w-6" />
+          <span className="sr-only">Minimalist Todo</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features-page">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/pricing">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Pricing
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
@@ -39,22 +32,20 @@ export function LandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Better Todo: Get More Done, Achieve Your Goals
+                Get More Done, Achieve Your Goals
                 </h1>
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                Streamline your life with Better Todo by bringing together everyday tasks, personal priorities, work to-dos, and upcoming projects in one clear overview.
+                Streamline your life by bringing together everyday tasks, personal priorities, work to-dos, and upcoming projects in one clear overview.
                 </p>
               </div>
               <div className="space-x-4">
                 <Button>Get Started</Button>
-                <Button variant="outline" asChild>
-                  <Link href="/features-page">Learn More</Link>
-                </Button>
+                <Button variant="outline">Learn More</Button>
               </div>
               <div className="w-full max-w-3xl mt-8">
                 <Image
                   src="/placeholder.svg?height=400&width=800"
-                  alt="Better Todo App Interface"
+                  alt="Minimalist Todo App Interface"
                   width={800}
                   height={400}
                   className="rounded-lg shadow-xl"
@@ -88,6 +79,7 @@ export function LandingPage() {
                   <p className="text-center text-gray-500 dark:text-gray-400">Set up recurring tasks for regular activities and monitor detailed statistics on your most frequent tasks.</p>
                 </CardContent>
               </Card>
+              
             </div>
           </div>
         </section>
@@ -176,7 +168,7 @@ export function LandingPage() {
         </section>
       </main>
       <footer className="w-full flex flex-col gap-2 sm:flex-row py-6 shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-gray-500 dark:text-gray-400">© 2024 Better Todo. All rights reserved.</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">© 2024 Minimalist Todo. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link className="text-xs hover:underline underline-offset-4" href="#">
             Terms of Service

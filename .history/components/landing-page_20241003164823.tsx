@@ -5,15 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle, ListTodo, Plus, Repeat, Quote } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from 'next/navigation'
 
 export function LandingPage() {
-  const router = useRouter()
-
-  const handleLearnMore = () => {
-    router.push('/features')
-  }
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="w-full px-4 lg:px-6 h-14 flex items-center">
@@ -25,7 +18,7 @@ export function LandingPage() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/pricing">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
             Pricing
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
@@ -47,9 +40,9 @@ export function LandingPage() {
               </div>
               <div className="space-x-4">
                 <Button>Get Started</Button>
-                <Button variant="outline" asChild>
-                  <Link href="/features-page">Learn More</Link>
-                </Button>
+                <Link href="/features">
+                  <Button variant="outline">Learn More</Button>
+                </Link>
               </div>
               <div className="w-full max-w-3xl mt-8">
                 <Image

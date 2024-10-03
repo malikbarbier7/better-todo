@@ -22,7 +22,7 @@ export function LandingPage() {
           <span className="font-bold">Better Todo</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features-page">
             Features
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/pricing">

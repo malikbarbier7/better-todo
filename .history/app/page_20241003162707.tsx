@@ -8,3 +8,5 @@ export default function Home() {
   )
 }
 
+import { FeaturesPageComponent } from '@/components/features-page'
+   
