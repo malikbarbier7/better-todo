@@ -90,41 +90,41 @@ export function Dashboard() {
   }
 
   const handleTaskStatusChange = (taskId: string, newStatus: 'completed' | 'pending') => {
-    let xpGained = false;
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
+      let shouldGainXP = false;
+
       for (const category in updatedTasks) {
-        updatedTasks[category] = updatedTasks[category]
-          .map(task => {
-            if (task.id.toString() === taskId) {
-              if (task.status === 'pending' && newStatus === 'completed' && !xpGained) {
-                // Task is being completed, gain XP only once
-                gainXP(10);
-                xpGained = true;
-              }
-              return { ...task, status: newStatus };
+        updatedTasks[category] = updatedTasks[category].map(task => {
+          if (task.id.toString() === taskId) {
+            if (task.status === 'pending' && newStatus === 'completed') {
+              shouldGainXP = true;
             }
-            return task;
-          })
-          .sort((a, b) => {
-            if (a.status === 'pending' && b.status === 'completed') return -1;
-            if (a.status === 'completed' && b.status === 'pending') return 1;
-            return 0;
-          });
+            return { ...task, status: newStatus };
+          }
+          return task;
+        }).sort((a, b) => {
+          if (a.status === 'pending' && b.status === 'completed') return -1;
+          if (a.status === 'completed' && b.status === 'pending') return 1;
+          return 0;
+        });
       }
+
+      if (shouldGainXP) {
+        gainXP(10);
+      }
+
       return updatedTasks;
     });
   };
 
   const gainXP = (amount: number) => {
     setXp(prevXP => {
-      let newXP = prevXP + amount;
-      let newLevel = level;
-      while (newXP >= 100) {
-        newXP -= 100;
-        newLevel += 1;
+      const newXP = prevXP + amount;
+      if (newXP >= 100) {
+        setLevel(prevLevel => prevLevel + 1);
+        return newXP - 100;
       }
-      setLevel(newLevel);
       return newXP;
     });
   };
@@ -233,7 +233,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{level}</div>
-              <Progress value={(xp / 100) * 100} className="mt-2" />
+              <Progress value={xp} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-2">XP: {xp}/100</p>
             </CardContent>
           </Card>

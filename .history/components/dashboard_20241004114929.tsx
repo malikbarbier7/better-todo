@@ -118,13 +118,11 @@ export function Dashboard() {
 
   const gainXP = (amount: number) => {
     setXp(prevXP => {
-      let newXP = prevXP + amount;
-      let newLevel = level;
-      while (newXP >= 100) {
-        newXP -= 100;
-        newLevel += 1;
+      const newXP = prevXP + amount;
+      if (newXP >= 100) {
+        setLevel(prevLevel => prevLevel + 1);
+        return newXP - 100;
       }
-      setLevel(newLevel);
       return newXP;
     });
   };
@@ -233,7 +231,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{level}</div>
-              <Progress value={(xp / 100) * 100} className="mt-2" />
+              <Progress value={xp} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-2">XP: {xp}/100</p>
             </CardContent>
           </Card>
