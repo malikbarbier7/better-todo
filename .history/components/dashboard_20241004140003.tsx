@@ -55,7 +55,6 @@ export function Dashboard() {
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
   const [gold, setGold] = React.useState(0)
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
@@ -190,11 +189,6 @@ export function Dashboard() {
   React.useEffect(() => {
     setNewTaskSpace(activeTab);
   }, [activeTab]);
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setNewTaskDueDate(date);
-    setIsDatePickerOpen(false);
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -398,7 +392,7 @@ export function Dashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant={"outline"}
@@ -406,7 +400,6 @@ export function Dashboard() {
                                 "w-[180px] justify-start text-left font-normal",
                                 !newTaskDueDate && "text-muted-foreground"
                               )}
-                              onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
@@ -416,7 +409,7 @@ export function Dashboard() {
                             <Calendar
                               mode="single"
                               selected={newTaskDueDate}
-                              onSelect={handleDateSelect}
+                              onSelect={setNewTaskDueDate}
                               initialFocus
                             />
                           </PopoverContent>

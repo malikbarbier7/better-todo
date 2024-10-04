@@ -55,7 +55,6 @@ export function Dashboard() {
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
   const [gold, setGold] = React.useState(0)
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
@@ -191,11 +190,6 @@ export function Dashboard() {
     setNewTaskSpace(activeTab);
   }, [activeTab]);
 
-  const handleDateSelect = (date: Date | undefined) => {
-    setNewTaskDueDate(date);
-    setIsDatePickerOpen(false);
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center h-16 px-4 border-b shrink-0 md:px-6">
@@ -308,17 +302,12 @@ export function Dashboard() {
                       ))}
                     </TabsList>
                     <div className="flex items-center space-x-2 ml-4">
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddTab();
-                      }}>
-                        <Input
-                          placeholder="New tab name"
-                          value={newTabName}
-                          onChange={(e) => setNewTabName(e.target.value)}
-                          className="w-32"
-                        />
-                      </form>
+                      <Input
+                        placeholder="New tab name"
+                        value={newTabName}
+                        onChange={(e) => setNewTabName(e.target.value)}
+                        className="w-32"
+                      />
                       <Button onClick={handleAddTab} size="icon">
                         <PlusCircle className="h-4 w-4" />
                       </Button>
@@ -398,7 +387,7 @@ export function Dashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant={"outline"}
@@ -406,7 +395,6 @@ export function Dashboard() {
                                 "w-[180px] justify-start text-left font-normal",
                                 !newTaskDueDate && "text-muted-foreground"
                               )}
-                              onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
@@ -416,7 +404,7 @@ export function Dashboard() {
                             <Calendar
                               mode="single"
                               selected={newTaskDueDate}
-                              onSelect={handleDateSelect}
+                              onSelect={setNewTaskDueDate}
                               initialFocus
                             />
                           </PopoverContent>

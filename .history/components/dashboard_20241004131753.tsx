@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon } from "lucide-react"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, Trash2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -32,15 +32,15 @@ export function Dashboard() {
   const [newTaskDueDate, setNewTaskDueDate] = React.useState<Date | undefined>(undefined)
   const [tasks, setTasks] = React.useState({
     'All': [
-      { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days', xpGained: false },
-      { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week', xpGained: false },
-      { id: 4, name: 'Buy groceries', status: 'pending', category: 'Personal', dueDate: 'Due tomorrow', xpGained: false },
-      { id: 5, name: 'Work on side project', status: 'pending', category: 'Side Project', dueDate: 'Due in 3 days', xpGained: false },
+      { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days' },
+      { id: 2, name: 'Review team updates', status: 'completed', category: 'Work', dueDate: 'Completed yesterday' },
+      { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week' },
+      { id: 4, name: 'Buy groceries', status: 'pending', category: 'Personal', dueDate: 'Due tomorrow' },
+      { id: 5, name: 'Work on side project', status: 'pending', category: 'Side Project', dueDate: 'Due in 3 days' },
     ],
     'Work': [
-      { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days', xpGained: false },
-      { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week', xpGained: false },
       { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days' },
+      { id: 2, name: 'Review team updates', status: 'completed', category: 'Work', dueDate: 'Completed yesterday' },
       { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week' },
     ],
     'Personal': [
@@ -55,7 +55,7 @@ export function Dashboard() {
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
   const [gold, setGold] = React.useState(0)
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  const [deletedTasks, setDeletedTasks] = React.useState<Array<any>>([])
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
@@ -86,8 +86,7 @@ export function Dashboard() {
         name: newTaskName,
         status: 'pending',
         category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
-        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set',
-        xpGained: false
+        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set'
       }
       setTasks(prevTasks => {
         const updatedTasks = { ...prevTasks };
@@ -107,34 +106,33 @@ export function Dashboard() {
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
-        updatedTasks[category] = updatedTasks[category].map(task => {
-          if (task.id.toString() === taskId) {
-            if (task.status === 'pending' && newStatus === 'completed' && !task.xpGained) {
-              // Task is being completed for the first time
-              if (!xpGained) {
+        updatedTasks[category] = updatedTasks[category]
+          .map(task => {
+            if (task.id.toString() === taskId) {
+              if (task.status === 'pending' && newStatus === 'completed' && !xpGained) {
+                // Task is being completed, gain XP and Gold only once
                 gainXP(10);
                 gainGold();
                 xpGained = true;
+                // Mettre à jour la date de complétion
+                return { 
+                  ...task, 
+                  status: newStatus, 
+                  dueDate: `Completed ${format(new Date(), "MMMM do, yyyy")}`
+                };
+              } else if (newStatus === 'pending') {
+                // Si la tâche est remise en pending, réinitialiser la date
+                return { ...task, status: newStatus, dueDate: 'Not set' };
               }
-              return { 
-                ...task, 
-                status: newStatus, 
-                xpGained: true, // Mark that XP has been gained for this task
-                dueDate: `Completed ${format(new Date(), "MMMM do, yyyy")}`
-              };
-            } else if (newStatus === 'pending') {
-              // If the task is set back to pending, reset the completion date but keep xpGained
-              return { ...task, status: newStatus, dueDate: 'Not set' };
+              return { ...task, status: newStatus };
             }
-            // For all other cases, just update the status
-            return { ...task, status: newStatus };
-          }
-          return task;
-        }).sort((a, b) => {
-          if (a.status === 'pending' && b.status === 'completed') return -1;
-          if (a.status === 'completed' && b.status === 'pending') return 1;
-          return 0;
-        });
+            return task;
+          })
+          .sort((a, b) => {
+            if (a.status === 'pending' && b.status === 'completed') return -1;
+            if (a.status === 'completed' && b.status === 'pending') return 1;
+            return 0;
+          });
       }
       return updatedTasks;
     });
@@ -156,6 +154,32 @@ export function Dashboard() {
   const gainGold = () => {
     const goldEarned = Math.floor(Math.random() * 5) + 1; // Génère un nombre entre 1 et 5
     setGold(prevGold => prevGold + goldEarned);
+  };
+
+  const handleCleanCompletedTasks = () => {
+    setTasks(prevTasks => {
+      const updatedTasks: { [key: string]: any[] } = {};
+      const newDeletedTasks: any[] = [];
+
+      for (const category in prevTasks) {
+        updatedTasks[category] = prevTasks[category].filter(task => {
+          if (task.status === 'completed') {
+            newDeletedTasks.push(task);
+            return false;
+          }
+          return true;
+        });
+      }
+
+      setDeletedTasks(prev => [...prev, ...newDeletedTasks]);
+      return updatedTasks;
+    });
+  };
+
+  const handleShowDeletedTasks = () => {
+    // Cette fonction pourrait ouvrir une modal ou naviguer vers une nouvelle page
+    // Pour cet exemple, nous allons simplement afficher une alerte
+    alert('Deleted tasks: ' + JSON.stringify(deletedTasks));
   };
 
   // Calculer le nombre total de tâches
@@ -190,11 +214,6 @@ export function Dashboard() {
   React.useEffect(() => {
     setNewTaskSpace(activeTab);
   }, [activeTab]);
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setNewTaskDueDate(date);
-    setIsDatePickerOpen(false);
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -282,7 +301,7 @@ export function Dashboard() {
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => {
               setActiveTab(value);
-              setNewTaskSpace(value); // Mettre  jour newTaskSpace ici aussi
+              setNewTaskSpace(value); // Mettre à jour newTaskSpace ici aussi
             }} className="w-full">
               <div className="flex flex-col">
                 <div className="mb-4">
@@ -308,17 +327,12 @@ export function Dashboard() {
                       ))}
                     </TabsList>
                     <div className="flex items-center space-x-2 ml-4">
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddTab();
-                      }}>
-                        <Input
-                          placeholder="New tab name"
-                          value={newTabName}
-                          onChange={(e) => setNewTabName(e.target.value)}
-                          className="w-32"
-                        />
-                      </form>
+                      <Input
+                        placeholder="New tab name"
+                        value={newTabName}
+                        onChange={(e) => setNewTabName(e.target.value)}
+                        className="w-32"
+                      />
                       <Button onClick={handleAddTab} size="icon">
                         <PlusCircle className="h-4 w-4" />
                       </Button>
@@ -346,6 +360,21 @@ export function Dashboard() {
                         onClick={() => setTaskFilter('completed')}
                       >
                         Completed
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleCleanCompletedTasks}
+                      >
+                        Clean completed tasks
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleShowDeletedTasks}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Deleted tasks
                       </Button>
                     </div>
                   </div>
@@ -398,7 +427,7 @@ export function Dashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant={"outline"}
@@ -406,7 +435,6 @@ export function Dashboard() {
                                 "w-[180px] justify-start text-left font-normal",
                                 !newTaskDueDate && "text-muted-foreground"
                               )}
-                              onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
@@ -416,7 +444,7 @@ export function Dashboard() {
                             <Calendar
                               mode="single"
                               selected={newTaskDueDate}
-                              onSelect={handleDateSelect}
+                              onSelect={setNewTaskDueDate}
                               initialFocus
                             />
                           </PopoverContent>

@@ -55,7 +55,6 @@ export function Dashboard() {
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
   const [gold, setGold] = React.useState(0)
-  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
@@ -86,8 +85,7 @@ export function Dashboard() {
         name: newTaskName,
         status: 'pending',
         category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
-        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set',
-        xpGained: false
+        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set'
       }
       setTasks(prevTasks => {
         const updatedTasks = { ...prevTasks };
@@ -103,7 +101,6 @@ export function Dashboard() {
   }
 
   const handleTaskStatusChange = (taskId: string, newStatus: 'completed' | 'pending') => {
-    let xpGained = false;
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
@@ -111,11 +108,8 @@ export function Dashboard() {
           if (task.id.toString() === taskId) {
             if (task.status === 'pending' && newStatus === 'completed' && !task.xpGained) {
               // Task is being completed for the first time
-              if (!xpGained) {
-                gainXP(10);
-                gainGold();
-                xpGained = true;
-              }
+              gainXP(10);
+              gainGold();
               return { 
                 ...task, 
                 status: newStatus, 
@@ -190,11 +184,6 @@ export function Dashboard() {
   React.useEffect(() => {
     setNewTaskSpace(activeTab);
   }, [activeTab]);
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setNewTaskDueDate(date);
-    setIsDatePickerOpen(false);
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -282,7 +271,7 @@ export function Dashboard() {
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => {
               setActiveTab(value);
-              setNewTaskSpace(value); // Mettre  jour newTaskSpace ici aussi
+              setNewTaskSpace(value); // Mettre à jour newTaskSpace ici aussi
             }} className="w-full">
               <div className="flex flex-col">
                 <div className="mb-4">
@@ -308,17 +297,12 @@ export function Dashboard() {
                       ))}
                     </TabsList>
                     <div className="flex items-center space-x-2 ml-4">
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddTab();
-                      }}>
-                        <Input
-                          placeholder="New tab name"
-                          value={newTabName}
-                          onChange={(e) => setNewTabName(e.target.value)}
-                          className="w-32"
-                        />
-                      </form>
+                      <Input
+                        placeholder="New tab name"
+                        value={newTabName}
+                        onChange={(e) => setNewTabName(e.target.value)}
+                        className="w-32"
+                      />
                       <Button onClick={handleAddTab} size="icon">
                         <PlusCircle className="h-4 w-4" />
                       </Button>
@@ -398,7 +382,7 @@ export function Dashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant={"outline"}
@@ -406,7 +390,6 @@ export function Dashboard() {
                                 "w-[180px] justify-start text-left font-normal",
                                 !newTaskDueDate && "text-muted-foreground"
                               )}
-                              onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
@@ -416,7 +399,7 @@ export function Dashboard() {
                             <Calendar
                               mode="single"
                               selected={newTaskDueDate}
-                              onSelect={handleDateSelect}
+                              onSelect={setNewTaskDueDate}
                               initialFocus
                             />
                           </PopoverContent>
