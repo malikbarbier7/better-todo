@@ -209,7 +209,7 @@ export function Dashboard() {
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
-                dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
+                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true, includeSeconds: true })}`
               };
             } else if (newStatus === 'pending') {
               return { ...task, status: newStatus, dueDate: 'Not set' };
@@ -308,20 +308,6 @@ export function Dashboard() {
   const isTaskDueToday = (dateString: string) => {
     return isToday(parseISO(dateString));
   }
-
-  const getCategoryStyle = (category: string) => {
-    if (category === 'Uncategorized') {
-      return {
-        backgroundColor: '#00000040', // Noir avec 25% d'opacité
-        color: '#FFFFFF' // Texte blanc
-      };
-    }
-    const tab = tabs.find(tab => tab.name === category);
-    return {
-      backgroundColor: tab ? tab.color + '40' : '#00000040', // Fallback to black if tab not found
-      color: tab ? tab.color : '#FFFFFF'
-    };
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -532,16 +518,17 @@ export function Dashboard() {
                               <div className="flex items-center justify-end space-x-2 min-w-[300px]">
                                 <span 
                                   className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                                  style={getCategoryStyle(task.category)}
+                                  style={{
+                                    backgroundColor: tabs.find(tab => tab.name === task.category)?.color + '40',
+                                    color: tabs.find(tab => tab.name === task.category)?.color
+                                  }}
                                 >
                                   {task.category}
                                 </span>
                                 <div className="flex items-center space-x-1">
                                   <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
                                     {formatDueDate(task.dueDate, true)}
-                                    {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
-                                    )}
+                                    {isTaskDueToday(task.dueDate) && <AlertCircle className="inline-block ml-1 w-3 h-3 text-yellow-500" />}
                                   </span>
                                 </div>
                               </div>

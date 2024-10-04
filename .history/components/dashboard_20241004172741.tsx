@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isValid, differenceInDays, parse } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 
 const pasteColors = [
@@ -39,7 +39,7 @@ type Task = {
   name: string;
   status: 'pending' | 'completed';
   category: string;
-  dueDate: string; // Store as ISO string
+  dueDate: string;
   xpGained: boolean;
 }
 
@@ -51,6 +51,28 @@ type Tab = {
 type Tasks = {
   [key: string]: Task[];
 }
+
+const isTaskDueOrOverdue = (dueDate: string) => {
+  if (dueDate === 'Not set' || dueDate.startsWith('Completed')) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (dueDate === 'Due today') return true;
+  if (dueDate === 'Due tomorrow') return false;
+  
+  if (dueDate.startsWith('Due in')) {
+    const daysMatch = dueDate.match(/Due in (\d+) days?/);
+    if (daysMatch) {
+      const daysUntilDue = parseInt(daysMatch[1]);
+      return daysUntilDue <= 0;
+    }
+  }
+  
+  // Handle "Due next week" and other formats
+  const dueDate = new Date(dueDate);
+  return !isNaN(dueDate.getTime()) && dueDate <= today;
+};
 
 export function Dashboard() {
   const [tabs, setTabs] = React.useState<Tab[]>([
@@ -70,10 +92,12 @@ export function Dashboard() {
       { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week', xpGained: false },
       { id: 4, name: 'Buy groceries', status: 'pending', category: 'Personal', dueDate: 'Due tomorrow', xpGained: false },
       { id: 5, name: 'Work on side project', status: 'pending', category: 'Side Project', dueDate: 'Due in 3 days', xpGained: false },
+      { id: 6, name: 'Overdue task', status: 'pending', category: 'Work', dueDate: 'Due today', xpGained: false },
     ],
     'Work': [
       { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days', xpGained: false },
       { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week', xpGained: false },
+      { id: 6, name: 'Overdue task', status: 'pending', category: 'Work', dueDate: 'Due today', xpGained: false },
     ],
     'Personal': [
       { id: 4, name: 'Buy groceries', status: 'pending', category: 'Personal', dueDate: 'Due tomorrow', xpGained: false },
@@ -117,56 +141,6 @@ export function Dashboard() {
     }
   }
 
-  const formatDueDate = (date: string, forDisplay: boolean = false) => {
-    try {
-      let dueDate: Date;
-      
-      // Essayez d'abord de parser comme une date ISO
-      dueDate = parseISO(date);
-      
-      // Si ce n'est pas une date valide, essayez de parser les formats de prévisualisation
-      if (!isValid(dueDate)) {
-        if (date.startsWith('Due ')) {
-          const withoutDue = date.slice(4);
-          if (withoutDue === 'today') {
-            dueDate = new Date();
-          } else if (withoutDue === 'tomorrow') {
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 1);
-          } else if (withoutDue === 'next week') {
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 7);
-          } else if (withoutDue.startsWith('in ')) {
-            const number = parseInt(withoutDue.split(' ')[1]);
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + number);
-          } else {
-            throw new Error('Unrecognized date format');
-          }
-        } else {
-          throw new Error('Invalid date format');
-        }
-      }
-
-      if (forDisplay) {
-        if (isToday(dueDate)) {
-          return "Due today";
-        }
-        if (isPast(dueDate)) {
-          return `Overdue by ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
-        }
-        const daysUntilDue = differenceInDays(dueDate, new Date());
-        if (daysUntilDue < 15) {
-          return `Due in ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
-        }
-      }
-      return format(dueDate, "PPP"); // Format standard pour l'affichage et le stockage
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return date; // Retourne la chaîne originale si on ne peut pas la parser
-    }
-  };
-
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault()
     if (newTaskName) {
@@ -175,7 +149,7 @@ export function Dashboard() {
         name: newTaskName,
         status: 'pending',
         category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
-        dueDate: newTaskDueDate ? newTaskDueDate.toISOString() : new Date().toISOString(),
+        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set',
         xpGained: false
       }
       setTasks(prevTasks => {
@@ -209,7 +183,7 @@ export function Dashboard() {
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
-                dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
+                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true, includeSeconds: true })}`
               };
             } else if (newStatus === 'pending') {
               return { ...task, status: newStatus, dueDate: 'Not set' };
@@ -303,24 +277,6 @@ export function Dashboard() {
       }
       return updatedTasks;
     });
-  };
-
-  const isTaskDueToday = (dateString: string) => {
-    return isToday(parseISO(dateString));
-  }
-
-  const getCategoryStyle = (category: string) => {
-    if (category === 'Uncategorized') {
-      return {
-        backgroundColor: '#00000040', // Noir avec 25% d'opacité
-        color: '#FFFFFF' // Texte blanc
-      };
-    }
-    const tab = tabs.find(tab => tab.name === category);
-    return {
-      backgroundColor: tab ? tab.color + '40' : '#00000040', // Fallback to black if tab not found
-      color: tab ? tab.color : '#FFFFFF'
-    };
   };
 
   return (
@@ -532,16 +488,19 @@ export function Dashboard() {
                               <div className="flex items-center justify-end space-x-2 min-w-[300px]">
                                 <span 
                                   className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                                  style={getCategoryStyle(task.category)}
+                                  style={{
+                                    backgroundColor: tabs.find(tab => tab.name === task.category)?.color + '40',
+                                    color: tabs.find(tab => tab.name === task.category)?.color
+                                  }}
                                 >
                                   {task.category}
                                 </span>
                                 <div className="flex items-center space-x-1">
+                                  {task.status !== 'completed' && isTaskDueOrOverdue(task.dueDate) && (
+                                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                  )}
                                   <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
-                                    {formatDueDate(task.dueDate, true)}
-                                    {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
-                                    )}
+                                    {task.dueDate}
                                   </span>
                                 </div>
                               </div>
@@ -580,7 +539,7 @@ export function Dashboard() {
                               onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {newTaskDueDate ? formatDueDate(newTaskDueDate.toISOString(), true) : <span>Set due date</span>}
+                              {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">

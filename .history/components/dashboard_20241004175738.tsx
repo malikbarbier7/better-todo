@@ -506,41 +506,41 @@ export function Dashboard() {
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center p-1 rounded-md h-10"
+                            className="flex items-center p-1 rounded-md h-10" // Restauré le padding à 1 et la hauteur à 10
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
                                 <button 
-                                  className="p-1 bg-green-500 text-white rounded-full no-tap-highlight"
+                                  className="p-1 bg-green-500 text-white rounded-full no-tap-highlight" // Restauré le padding à 1
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
                                 >
-                                  <CheckCircle className="w-3 h-3" />
+                                  <CheckCircle className="w-4 h-4" /> // Restauré la taille à 4x4
                                 </button>
                               ) : (
                                 <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight"
+                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight" // Restauré le padding à 1
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
                                 >
-                                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                                  <div className="w-4 h-4 bg-gray-300 rounded-full"></div> // Restauré la taille à 4x4
                                 </button>
                               )}
                             </div>
                             <div className="flex items-center w-full">
-                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-sm`}>
+                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-sm`}> // Restauré la marge à gauche à 2 et la taille du texte à sm
                                 {task.name}
                               </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[300px]">
+                              <div className="flex items-center justify-end space-x-2 min-w-[300px]"> // Restauré l'espace entre les éléments à 2
                                 <span 
-                                  className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" // Restauré le padding horizontal à 2
                                   style={getCategoryStyle(task.category)}
                                 >
                                   {task.category}
                                 </span>
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
+                                <div className="flex items-center space-x-1"> // Restauré l'espace entre les éléments à 1
+                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis"> // Restauré la largeur à 48
                                     {formatDueDate(task.dueDate, true)}
                                     {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
+                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" /> // Restauré la taille de l'icône et la marge à gauche
                                     )}
                                   </span>
                                 </div>

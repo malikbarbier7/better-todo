@@ -537,7 +537,7 @@ export function Dashboard() {
                                   {task.category}
                                 </span>
                                 <div className="flex items-center space-x-1">
-                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
+                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis flex items-center justify-end">
                                     {formatDueDate(task.dueDate, true)}
                                     {isTaskDueToday(task.dueDate) && (
                                       <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />

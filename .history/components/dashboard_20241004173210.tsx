@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isValid, differenceInDays, parse } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 
 const pasteColors = [
@@ -39,7 +39,7 @@ type Task = {
   name: string;
   status: 'pending' | 'completed';
   category: string;
-  dueDate: string; // Store as ISO string
+  dueDate: string;
   xpGained: boolean;
 }
 
@@ -117,56 +117,6 @@ export function Dashboard() {
     }
   }
 
-  const formatDueDate = (date: string, forDisplay: boolean = false) => {
-    try {
-      let dueDate: Date;
-      
-      // Essayez d'abord de parser comme une date ISO
-      dueDate = parseISO(date);
-      
-      // Si ce n'est pas une date valide, essayez de parser les formats de prévisualisation
-      if (!isValid(dueDate)) {
-        if (date.startsWith('Due ')) {
-          const withoutDue = date.slice(4);
-          if (withoutDue === 'today') {
-            dueDate = new Date();
-          } else if (withoutDue === 'tomorrow') {
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 1);
-          } else if (withoutDue === 'next week') {
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 7);
-          } else if (withoutDue.startsWith('in ')) {
-            const number = parseInt(withoutDue.split(' ')[1]);
-            dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + number);
-          } else {
-            throw new Error('Unrecognized date format');
-          }
-        } else {
-          throw new Error('Invalid date format');
-        }
-      }
-
-      if (forDisplay) {
-        if (isToday(dueDate)) {
-          return "Due today";
-        }
-        if (isPast(dueDate)) {
-          return `Overdue by ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
-        }
-        const daysUntilDue = differenceInDays(dueDate, new Date());
-        if (daysUntilDue < 15) {
-          return `Due in ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
-        }
-      }
-      return format(dueDate, "PPP"); // Format standard pour l'affichage et le stockage
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return date; // Retourne la chaîne originale si on ne peut pas la parser
-    }
-  };
-
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault()
     if (newTaskName) {
@@ -175,7 +125,7 @@ export function Dashboard() {
         name: newTaskName,
         status: 'pending',
         category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
-        dueDate: newTaskDueDate ? newTaskDueDate.toISOString() : new Date().toISOString(),
+        dueDate: newTaskDueDate ? format(newTaskDueDate, "PPP") : 'Not set',
         xpGained: false
       }
       setTasks(prevTasks => {
@@ -209,7 +159,7 @@ export function Dashboard() {
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
-                dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
+                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true, includeSeconds: true })}`
               };
             } else if (newStatus === 'pending') {
               return { ...task, status: newStatus, dueDate: 'Not set' };
@@ -305,23 +255,11 @@ export function Dashboard() {
     });
   };
 
-  const isTaskDueToday = (dateString: string) => {
-    return isToday(parseISO(dateString));
+  const isToday = (dateString: string) => {
+    const today = new Date()
+    return dateString.toLowerCase().includes('due today') ||
+           (dateString.startsWith('Due') && formatDistanceToNow(today, { addSuffix: true }) === dateString.slice(4))
   }
-
-  const getCategoryStyle = (category: string) => {
-    if (category === 'Uncategorized') {
-      return {
-        backgroundColor: '#00000040', // Noir avec 25% d'opacité
-        color: '#FFFFFF' // Texte blanc
-      };
-    }
-    const tab = tabs.find(tab => tab.name === category);
-    return {
-      backgroundColor: tab ? tab.color + '40' : '#00000040', // Fallback to black if tab not found
-      color: tab ? tab.color : '#FFFFFF'
-    };
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -532,16 +470,17 @@ export function Dashboard() {
                               <div className="flex items-center justify-end space-x-2 min-w-[300px]">
                                 <span 
                                   className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                                  style={getCategoryStyle(task.category)}
+                                  style={{
+                                    backgroundColor: tabs.find(tab => tab.name === task.category)?.color + '40',
+                                    color: tabs.find(tab => tab.name === task.category)?.color
+                                  }}
                                 >
                                   {task.category}
                                 </span>
                                 <div className="flex items-center space-x-1">
                                   <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
-                                    {formatDueDate(task.dueDate, true)}
-                                    {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
-                                    )}
+                                    {task.dueDate}
+                                    {isToday(task.dueDate) && <AlertCircle className="inline-block ml-1 w-3 h-3 text-yellow-500" />}
                                   </span>
                                 </div>
                               </div>
@@ -580,7 +519,7 @@ export function Dashboard() {
                               onClick={() => setIsDatePickerOpen(true)}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {newTaskDueDate ? formatDueDate(newTaskDueDate.toISOString(), true) : <span>Set due date</span>}
+                              {newTaskDueDate ? format(newTaskDueDate, "PPP") : <span>Set due date</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">

@@ -506,19 +506,19 @@ export function Dashboard() {
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center p-1 rounded-md h-10"
+                            className="flex items-center p-0.5 rounded-md h-8" // Réduit le padding à 0.5 et la hauteur à 8
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
                                 <button 
-                                  className="p-1 bg-green-500 text-white rounded-full no-tap-highlight"
+                                  className="p-0.5 bg-green-500 text-white rounded-full no-tap-highlight" // Réduit le padding à 0.5
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
                                 >
                                   <CheckCircle className="w-3 h-3" />
                                 </button>
                               ) : (
                                 <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight"
+                                  className="p-0.5 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight" // Réduit le padding à 0.5
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
                                 >
                                   <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
@@ -526,21 +526,21 @@ export function Dashboard() {
                               )}
                             </div>
                             <div className="flex items-center w-full">
-                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-sm`}>
+                              <span className={`ml-1 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-xs`}> // Réduit la marge à gauche à 1 et la taille du texte à xs
                                 {task.name}
                               </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[300px]">
+                              <div className="flex items-center justify-end space-x-1 min-w-[300px]"> // Réduit l'espace entre les éléments à 1
                                 <span 
-                                  className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  className="text-xs px-1 py-0.5 rounded-full whitespace-nowrap" // Réduit le padding horizontal à 1
                                   style={getCategoryStyle(task.category)}
                                 >
                                   {task.category}
                                 </span>
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
+                                <div className="flex items-center space-x-0.5"> // Réduit l'espace entre les éléments à 0.5
+                                  <span className="text-xs text-muted-foreground w-40 text-right whitespace-nowrap overflow-hidden text-ellipsis"> // Réduit la largeur à 40
                                     {formatDueDate(task.dueDate, true)}
                                     {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
+                                      <AlertCircle className="inline-block ml-0.5 w-2.5 h-2.5 text-red-500" /> // Réduit la taille de l'icône et la marge à gauche
                                     )}
                                   </span>
                                 </div>

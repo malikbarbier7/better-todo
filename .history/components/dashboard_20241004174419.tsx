@@ -209,7 +209,7 @@ export function Dashboard() {
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
-                dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
+                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true, includeSeconds: true })}`
               };
             } else if (newStatus === 'pending') {
               return { ...task, status: newStatus, dueDate: 'Not set' };
@@ -539,9 +539,7 @@ export function Dashboard() {
                                 <div className="flex items-center space-x-1">
                                   <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
                                     {formatDueDate(task.dueDate, true)}
-                                    {isTaskDueToday(task.dueDate) && (
-                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
-                                    )}
+                                    {isTaskDueToday(task.dueDate) && <AlertCircle className="inline-block ml-1 w-3 h-3 text-yellow-500" />}
                                   </span>
                                 </div>
                               </div>
