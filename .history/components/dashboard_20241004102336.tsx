@@ -76,32 +76,13 @@ export function Dashboard() {
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
-        const categoryTasks = updatedTasks[category as keyof typeof updatedTasks];
-        const updatedCategoryTasks = categoryTasks.map(task => 
+        updatedTasks[category as keyof typeof updatedTasks] = updatedTasks[category as keyof typeof updatedTasks].map(task => 
           task.id.toString() === taskId ? { ...task, status: newStatus } : task
         );
-        
-        // Trier les tâches : tâches en cours en haut, tâches complétées en bas
-        updatedTasks[category as keyof typeof updatedTasks] = [
-          ...updatedCategoryTasks.filter(task => task.status === 'pending'),
-          ...updatedCategoryTasks.filter(task => task.status === 'completed')
-        ];
       }
       return updatedTasks;
     });
   };
-
-  // Calculer le nombre total de tâches
-  const totalTasks = tasks['All'].length;
-
-  // Calculer le nombre de tâches complétées
-  const completedTasks = tasks['All'].filter(task => task.status === 'completed').length;
-
-  // Calculer le nombre de tâches en attente
-  const pendingTasks = totalTasks - completedTasks;
-
-  // Calculer le taux de complétion
-  const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -110,7 +91,7 @@ export function Dashboard() {
           <ul className="flex items-center gap-4 text-sm font-medium">
             <li className="flex items-center gap-2">
               <ListTodo className="w-4 h-4" />
-              <span className="font-bold">Better Todo</span>
+              <span>Todo App</span>
             </li>
           </ul>
         </nav>
@@ -133,9 +114,8 @@ export function Dashboard() {
               <ListTodo className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalTasks}</div>
-              {/* Vous pouvez ajouter une comparaison avec hier si vous gardez un historique */}
-              <p className="text-xs text-muted-foreground">Current total tasks</p>
+              <div className="text-2xl font-bold">24</div>
+              <p className="text-xs text-muted-foreground">+2 from yesterday</p>
             </CardContent>
           </Card>
           <Card>
@@ -144,8 +124,8 @@ export function Dashboard() {
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completedTasks}</div>
-              <p className="text-xs text-muted-foreground">Tasks completed</p>
+              <div className="text-2xl font-bold">16</div>
+              <p className="text-xs text-muted-foreground">+4 from yesterday</p>
             </CardContent>
           </Card>
           <Card>
@@ -154,8 +134,8 @@ export function Dashboard() {
               <Circle className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingTasks}</div>
-              <p className="text-xs text-muted-foreground">Tasks to be completed</p>
+              <div className="text-2xl font-bold">8</div>
+              <p className="text-xs text-muted-foreground">-2 from yesterday</p>
             </CardContent>
           </Card>
           <Card>
@@ -164,8 +144,8 @@ export function Dashboard() {
               <CalendarDays className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completionRate}%</div>
-              <p className="text-xs text-muted-foreground">Of tasks completed</p>
+              <div className="text-2xl font-bold">66.7%</div>
+              <p className="text-xs text-muted-foreground">+12% from last week</p>
             </CardContent>
           </Card>
         </div>
