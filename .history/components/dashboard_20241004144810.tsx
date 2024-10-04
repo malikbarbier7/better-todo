@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { format, formatDistanceToNow } from "date-fns"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
 const pasteColors = [
@@ -34,26 +34,8 @@ const pasteColors = [
   '#FF8C00', // Orange légèrement pâle
 ];
 
-type Task = {
-  id: number;
-  name: string;
-  status: 'pending' | 'completed';
-  category: string;
-  dueDate: string;
-  xpGained: boolean;
-}
-
-type Tab = {
-  name: string;
-  color: string;
-}
-
-type Tasks = {
-  [key: string]: Task[];
-}
-
 export function Dashboard() {
-  const [tabs, setTabs] = React.useState<Tab[]>([
+  const [tabs, setTabs] = React.useState([
     { name: 'All', color: '#000000' }, // Noir pour l'onglet "All"
     { name: 'Work', color: '#4D96FF' }, // Bleu pour Work
     { name: 'Personal', color: '#6BCB77' }, // Vert pour Personal
@@ -64,7 +46,7 @@ export function Dashboard() {
   const [newTaskName, setNewTaskName] = React.useState('')
   const [newTaskSpace, setNewTaskSpace] = React.useState('All')
   const [newTaskDueDate, setNewTaskDueDate] = React.useState<Date | undefined>(undefined)
-  const [tasks, setTasks] = React.useState<Tasks>({
+  const [tasks, setTasks] = React.useState({
     'All': [
       { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days', xpGained: false },
       { id: 3, name: 'Plan team building activity', status: 'pending', category: 'Work', dueDate: 'Due next week', xpGained: false },
@@ -109,10 +91,9 @@ export function Dashboard() {
   const handleRemoveTab = (tab: string) => {
     if (tab !== 'All') {
       const newTabs = tabs.filter(t => t.name !== tab)
-      const newTasks = { ...tasks }
-      delete newTasks[tab]
+      const { [tab]: removedTasks, ...restTasks } = tasks
       setTabs(newTabs)
-      setTasks(newTasks)
+      setTasks(restTasks)
       setActiveTab('All')
     }
   }
@@ -120,7 +101,7 @@ export function Dashboard() {
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault()
     if (newTaskName) {
-      const newTask: Task = {
+      const newTask = {
         id: Date.now(),
         name: newTaskName,
         status: 'pending',
@@ -145,25 +126,27 @@ export function Dashboard() {
     let xpGained = false;
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
-      Object.keys(updatedTasks).forEach(category => {
+      for (const category in updatedTasks) {
         updatedTasks[category] = updatedTasks[category].map(task => {
           if (task.id.toString() === taskId) {
             if (task.status === 'pending' && newStatus === 'completed' && !task.xpGained) {
+              // Task is being completed for the first time
               if (!xpGained) {
                 gainXP(10);
                 gainGold();
                 xpGained = true;
               }
-              const completionDate = new Date();
               return { 
                 ...task, 
                 status: newStatus, 
-                xpGained: true, 
-                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true })}`
+                xpGained: true, // Mark that XP has been gained for this task
+                dueDate: `Completed ${format(new Date(), "MMMM do, yyyy")}`
               };
             } else if (newStatus === 'pending') {
+              // If the task is set back to pending, reset the completion date but keep xpGained
               return { ...task, status: newStatus, dueDate: 'Not set' };
             }
+            // For all other cases, just update the status
             return { ...task, status: newStatus };
           }
           return task;
@@ -172,7 +155,7 @@ export function Dashboard() {
           if (a.status === 'completed' && b.status === 'pending') return 1;
           return 0;
         });
-      });
+      }
       return updatedTasks;
     });
   };
@@ -216,6 +199,7 @@ export function Dashboard() {
         return true;
       })
       .sort((a, b) => {
+        // Trier les tâches : pendantes en haut, complétées en bas
         if (a.status === 'pending' && b.status === 'completed') return -1;
         if (a.status === 'completed' && b.status === 'pending') return 1;
         return 0;
@@ -278,31 +262,61 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
-          {[
-            { title: "Total Tasks", icon: <ListTodo className="w-4 h-4 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
-            { title: "Completed Tasks", icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
-            { title: "Pending Tasks", icon: <Circle className="w-4 h-4 text-muted-foreground" />, value: pendingTasks, description: "Tasks to be completed" },
-            { title: "Completion Rate", icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
-            { title: "Level", icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
-              <>
-                <Progress value={(xp / 100) * 100} className="mt-2 h-1.5" />
-                <p className="text-xs font-semibold text-yellow-600 mt-1">Gold: {gold}</p>
-              </>
-            ) },
-          ].map((card, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
-                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                {card.icon}
-              </CardHeader>
-              <CardContent className="py-2 px-4">
-                <div className="text-xl font-bold">{card.value}</div>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
-                {card.extraContent}
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+              <ListTodo className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalTasks}</div>
+              <p className="text-xs text-muted-foreground">Current total tasks</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
+              <CheckCircle className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedTasks}</div>
+              <p className="text-xs text-muted-foreground">Tasks completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+              <Circle className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pendingTasks}</div>
+              <p className="text-xs text-muted-foreground">Tasks to be completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <CalendarDays className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completionRate}%</div>
+              <p className="text-xs text-muted-foreground">Of tasks completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Level</CardTitle>
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{level}</div>
+              <Progress value={(xp / 100) * 100} className="mt-2" />
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-muted-foreground">XP: {xp}/100</p>
+                <p className="text-xs font-semibold text-yellow-600">Gold: {gold}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <Card className="mt-4">
           <CardHeader>
@@ -321,9 +335,10 @@ export function Dashboard() {
                         <TabsTrigger 
                           key={tab.name} 
                           value={tab.name} 
-                          className="flex items-center mx-1 first:ml-0 last:mr-0 relative"
+                          className="flex items-center border-2 mx-1 first:ml-0 last:mr-0"
                           style={{ 
-                            backgroundColor: activeTab === tab.name ? `${tab.color}10` : 'transparent'
+                            borderColor: tab.color,
+                            backgroundColor: activeTab === tab.name ? `${tab.color}20` : 'transparent'
                           }}
                           onClick={() => setSelectedTab(tab.name)}
                         >
@@ -341,14 +356,6 @@ export function Dashboard() {
                               <X className="h-3 w-3" />
                             </Button>
                           )}
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300 ease-in-out"
-                            style={{ 
-                              backgroundColor: tab.color,
-                              opacity: activeTab === tab.name ? 1 : 0,
-                              transform: `scaleX(${activeTab === tab.name ? 1 : 0})`
-                            }}
-                          />
                         </TabsTrigger>
                       ))}
                     </TabsList>
@@ -426,7 +433,7 @@ export function Dashboard() {
                         variant="destructive"
                         onClick={handleCleanCompleted}
                       >
-                        Clean All completed tasks
+                        Clean completed tasks
                       </Button>
                     </div>
                   </div>
@@ -434,23 +441,23 @@ export function Dashboard() {
                 <div>
                   {tabs.map((tab) => (
                     <TabsContent key={tab.name} value={tab.name}>
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center p-1 rounded-md h-10" // Réduit la hauteur à h-10 et le padding à p-1
+                            className="flex items-center p-2 rounded-md"
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
                                 <button 
-                                  className="p-1 bg-green-500 text-white rounded-full no-tap-highlight"
+                                  className="p-1 bg-green-500 text-white rounded-full"
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
                                 >
                                   <CheckCircle className="w-3 h-3" />
                                 </button>
                               ) : (
                                 <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight"
+                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
                                 >
                                   <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
@@ -458,12 +465,12 @@ export function Dashboard() {
                               )}
                             </div>
                             <div className="flex items-center w-full">
-                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-sm`}>
+                              <span className={`ml-3 flex-1 ${task.status === 'completed' ? 'line-through' : ''}`}>
                                 {task.name}
                               </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[300px]">
+                              <div className="flex items-center justify-end space-x-4 min-w-[300px]">
                                 <span 
-                                  className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  className="text-xs px-2 py-1 rounded-full" 
                                   style={{
                                     backgroundColor: tabs.find(tab => tab.name === task.category)?.color + '40',
                                     color: tabs.find(tab => tab.name === task.category)?.color
@@ -471,9 +478,7 @@ export function Dashboard() {
                                 >
                                   {task.category}
                                 </span>
-                                <span className="text-xs text-muted-foreground w-40 text-right whitespace-nowrap overflow-hidden text-ellipsis">
-                                  {task.dueDate}
-                                </span>
+                                <span className="text-sm text-muted-foreground w-32">{task.dueDate}</span>
                               </div>
                             </div>
                           </div>

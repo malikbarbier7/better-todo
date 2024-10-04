@@ -76,22 +76,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-@layer base {
-  input[type="number"],
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="date"],
-  textarea,
-  select,
-  button {
-    font-size: 16px; /* Empêche le zoom sur iOS */
-  }
-}
-
-@layer utilities {
-  .no-tap-highlight {
-    -webkit-tap-highlight-color: transparent;
-  }
-}

@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { format, formatDistanceToNow } from "date-fns"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
 const pasteColors = [
@@ -154,12 +154,11 @@ export function Dashboard() {
                 gainGold();
                 xpGained = true;
               }
-              const completionDate = new Date();
               return { 
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
-                dueDate: `Completed ${formatDistanceToNow(completionDate, { addSuffix: true })}`
+                dueDate: `Completed ${format(new Date(), "MMMM do, yyyy")}`
               };
             } else if (newStatus === 'pending') {
               return { ...task, status: newStatus, dueDate: 'Not set' };
@@ -278,31 +277,61 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
-          {[
-            { title: "Total Tasks", icon: <ListTodo className="w-4 h-4 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
-            { title: "Completed Tasks", icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
-            { title: "Pending Tasks", icon: <Circle className="w-4 h-4 text-muted-foreground" />, value: pendingTasks, description: "Tasks to be completed" },
-            { title: "Completion Rate", icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
-            { title: "Level", icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
-              <>
-                <Progress value={(xp / 100) * 100} className="mt-2 h-1.5" />
-                <p className="text-xs font-semibold text-yellow-600 mt-1">Gold: {gold}</p>
-              </>
-            ) },
-          ].map((card, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
-                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                {card.icon}
-              </CardHeader>
-              <CardContent className="py-2 px-4">
-                <div className="text-xl font-bold">{card.value}</div>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
-                {card.extraContent}
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+              <ListTodo className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalTasks}</div>
+              <p className="text-xs text-muted-foreground">Current total tasks</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
+              <CheckCircle className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedTasks}</div>
+              <p className="text-xs text-muted-foreground">Tasks completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+              <Circle className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pendingTasks}</div>
+              <p className="text-xs text-muted-foreground">Tasks to be completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <CalendarDays className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completionRate}%</div>
+              <p className="text-xs text-muted-foreground">Of tasks completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Level</CardTitle>
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{level}</div>
+              <Progress value={(xp / 100) * 100} className="mt-2" />
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-muted-foreground">XP: {xp}/100</p>
+                <p className="text-xs font-semibold text-yellow-600">Gold: {gold}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <Card className="mt-4">
           <CardHeader>
@@ -471,9 +500,7 @@ export function Dashboard() {
                                 >
                                   {task.category}
                                 </span>
-                                <span className="text-xs text-muted-foreground w-40 text-right whitespace-nowrap overflow-hidden text-ellipsis">
-                                  {task.dueDate}
-                                </span>
+                                <span className="text-xs text-muted-foreground w-32 text-right whitespace-nowrap">{task.dueDate}</span>
                               </div>
                             </div>
                           </div>

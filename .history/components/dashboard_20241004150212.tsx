@@ -278,27 +278,27 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-5">
           {[
-            { title: "Total Tasks", icon: <ListTodo className="w-4 h-4 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
-            { title: "Completed Tasks", icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
-            { title: "Pending Tasks", icon: <Circle className="w-4 h-4 text-muted-foreground" />, value: pendingTasks, description: "Tasks to be completed" },
-            { title: "Completion Rate", icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
-            { title: "Level", icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
+            { title: "Total Tasks", icon: <ListTodo className="w-3 h-3 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
+            { title: "Completed Tasks", icon: <CheckCircle className="w-3 h-3 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
+            { title: "Pending Tasks", icon: <Circle className="w-3 h-3 text-muted-foreground" />, value: pendingTasks, description: "Tasks to be completed" },
+            { title: "Completion Rate", icon: <CalendarDays className="w-3 h-3 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
+            { title: "Level", icon: <TrendingUp className="w-3 h-3 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
               <>
-                <Progress value={(xp / 100) * 100} className="mt-2 h-1.5" />
-                <p className="text-xs font-semibold text-yellow-600 mt-1">Gold: {gold}</p>
+                <Progress value={(xp / 100) * 100} className="mt-1 h-1" />
+                <p className="text-xs font-semibold text-yellow-600 mt-0.5">Gold: {gold}</p>
               </>
             ) },
           ].map((card, index) => (
             <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
-                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1 px-3">
+                <CardTitle className="text-xs font-medium">{card.title}</CardTitle>
                 {card.icon}
               </CardHeader>
-              <CardContent className="py-2 px-4">
-                <div className="text-xl font-bold">{card.value}</div>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
+              <CardContent className="py-1 px-3">
+                <div className="text-lg font-bold">{card.value}</div>
+                <p className="text-[10px] text-muted-foreground">{card.description}</p>
                 {card.extraContent}
               </CardContent>
             </Card>

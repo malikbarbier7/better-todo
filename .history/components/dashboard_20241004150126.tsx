@@ -278,7 +278,7 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           {[
             { title: "Total Tasks", icon: <ListTodo className="w-4 h-4 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
             { title: "Completed Tasks", icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
@@ -286,17 +286,17 @@ export function Dashboard() {
             { title: "Completion Rate", icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
             { title: "Level", icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
               <>
-                <Progress value={(xp / 100) * 100} className="mt-2 h-1.5" />
+                <Progress value={(xp / 100) * 100} className="mt-2 h-1" />
                 <p className="text-xs font-semibold text-yellow-600 mt-1">Gold: {gold}</p>
               </>
             ) },
           ].map((card, index) => (
             <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                 <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
                 {card.icon}
               </CardHeader>
-              <CardContent className="py-2 px-4">
+              <CardContent>
                 <div className="text-xl font-bold">{card.value}</div>
                 <p className="text-xs text-muted-foreground">{card.description}</p>
                 {card.extraContent}
