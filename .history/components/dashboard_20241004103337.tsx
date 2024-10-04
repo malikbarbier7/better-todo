@@ -5,21 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X } from "lucide-react"
+import { Tasks } from '../types'; // Adjust the import path as needed
 
 export function Dashboard() {
   const [tabs, setTabs] = React.useState(['All', 'Work', 'Personal', 'Side Project'])
   const [activeTab, setActiveTab] = React.useState('All')
   const [newTabName, setNewTabName] = React.useState('')
   const [newTaskName, setNewTaskName] = React.useState('')
-  const [newTaskSpace, setNewTaskSpace] = React.useState('All')
   const [tasks, setTasks] = React.useState({
     'All': [
       { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days' },
@@ -40,27 +33,24 @@ export function Dashboard() {
       { id: 5, name: 'Work on side project', status: 'pending', category: 'Side Project', dueDate: 'Due in 3 days' },
     ],
   })
-
-  const [taskFilter, setTaskFilter] = React.useState('all')
+  const [taskFilter, setTaskFilter] = React.useState('all');
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
-      const updatedTabs = [...tabs, newTabName];
-      setTabs(updatedTabs);
-      setTasks(prevTasks => ({ ...prevTasks, [newTabName]: [] }));
-      setActiveTab(newTabName);
-      setNewTaskSpace(newTabName); // Mettre à jour l'espace de la nouvelle tâche
-      setNewTabName('');
+      setTabs([...tabs, newTabName])
+      setTasks({ ...tasks, [newTabName]: [] })
+      setActiveTab(newTabName)
+      setNewTabName('')
     }
   }
 
   const handleRemoveTab = (tab: string) => {
     if (tab !== 'All') {
-      const newTabs = tabs.filter(t => t !== tab)
-      const { [tab]: removedTasks, ...restTasks } = tasks
-      setTabs(newTabs)
-      setTasks(restTasks)
-      setActiveTab('All')
+      const newTabs = tabs.filter(t => t !== tab);
+      const { [tab]: removedTasks, ...restTasks } = tasks as Tasks;
+      setTabs(newTabs);
+      setTasks(restTasks);
+      setActiveTab('All');
     }
   }
 
@@ -71,17 +61,14 @@ export function Dashboard() {
         id: Date.now(),
         name: newTaskName,
         status: 'pending',
-        category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
+        category: activeTab === 'All' ? 'Uncategorized' : activeTab,
         dueDate: 'Not set'
       }
-      setTasks(prevTasks => {
-        const updatedTasks = { ...prevTasks };
-        if (newTaskSpace !== 'All') {
-          updatedTasks[newTaskSpace] = [...(updatedTasks[newTaskSpace] || []), newTask];
-        }
-        updatedTasks['All'] = [...updatedTasks['All'], newTask];
-        return updatedTasks;
-      })
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [activeTab]: [...(prevTasks[activeTab as keyof typeof prevTasks] || []), newTask],
+        'All': [...prevTasks['All'], newTask]
+      }))
       setNewTaskName('')
     }
   }
@@ -90,16 +77,16 @@ export function Dashboard() {
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
-        updatedTasks[category] = updatedTasks[category]
-          .map(task => 
-            task.id.toString() === taskId ? { ...task, status: newStatus } : task
-          )
-          .sort((a, b) => {
-            // Trier les tâches : pendantes en haut, complétées en bas
-            if (a.status === 'pending' && b.status === 'completed') return -1;
-            if (a.status === 'completed' && b.status === 'pending') return 1;
-            return 0;
-          });
+        const categoryTasks = updatedTasks[category as keyof typeof updatedTasks];
+        const updatedCategoryTasks = categoryTasks.map(task => 
+          task.id.toString() === taskId ? { ...task, status: newStatus } : task
+        );
+        
+        // Trier les tâches : tâches en cours en haut, tâches complétées en bas
+        updatedTasks[category as keyof typeof updatedTasks] = [
+          ...updatedCategoryTasks.filter(task => task.status === 'pending'),
+          ...updatedCategoryTasks.filter(task => task.status === 'completed')
+        ];
       }
       return updatedTasks;
     });
@@ -118,25 +105,13 @@ export function Dashboard() {
   const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
 
   const filteredTasks = React.useMemo(() => {
-    return (tasks[activeTab] || [])
-      .filter(task => {
-        if (taskFilter === 'all') return true;
-        if (taskFilter === 'pending') return task.status === 'pending';
-        if (taskFilter === 'completed') return task.status === 'completed';
-        return true;
-      })
-      .sort((a, b) => {
-        // Trier les tâches : pendantes en haut, complétées en bas
-        if (a.status === 'pending' && b.status === 'completed') return -1;
-        if (a.status === 'completed' && b.status === 'pending') return 1;
-        return 0;
-      });
+    return (tasks[activeTab as keyof typeof tasks] ?? []).filter(task => {
+      if (taskFilter === 'all') return true;
+      if (taskFilter === 'pending') return task.status === 'pending';
+      if (taskFilter === 'completed') return task.status === 'completed';
+      return true;
+    });
   }, [tasks, activeTab, taskFilter]);
-
-  // Mettre à jour newTaskSpace quand activeTab change
-  React.useEffect(() => {
-    setNewTaskSpace(activeTab);
-  }, [activeTab]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -169,6 +144,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTasks}</div>
+              {/* Vous pouvez ajouter une comparaison avec hier si vous gardez un historique */}
               <p className="text-xs text-muted-foreground">Current total tasks</p>
             </CardContent>
           </Card>
@@ -208,72 +184,71 @@ export function Dashboard() {
             <CardTitle>Recent Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => {
-              setActiveTab(value);
-              setNewTaskSpace(value); // Mettre à jour newTaskSpace ici aussi
-            }} className="w-full">
-              <div className="flex flex-col">
-                <div className="mb-4">
-                  <div className="flex justify-between items-center">
-                    <TabsList className="flex-grow justify-start">
-                      {tabs.map((tab) => (
-                        <TabsTrigger key={tab} value={tab} className="flex items-center">
-                          {tab}
-                          {tab !== 'All' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="ml-2 h-4 w-4"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveTab(tab)
-                              }}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Input
-                        placeholder="New tab name"
-                        value={newTabName}
-                        onChange={(e) => setNewTabName(e.target.value)}
-                        className="w-32"
-                      />
-                      <Button onClick={handleAddTab} size="icon">
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-start mt-2">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'all' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('all')}
-                      >
-                        All
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'pending' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('pending')}
-                      >
-                        Pending
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'completed' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('completed')}
-                      >
-                        Completed
-                      </Button>
-                    </div>
-                  </div>
+            <div className="flex">
+              {/* Colonne de gauche pour les onglets */}
+              <div className="w-1/4 pr-4">
+                <TabsList className="flex flex-col items-stretch">
+                  {tabs.map((tab) => (
+                    <TabsTrigger 
+                      key={tab} 
+                      value={tab} 
+                      className="flex justify-between items-center mb-2"
+                    >
+                      {tab}
+                      {tab !== 'All' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemoveTab(tab)
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <div className="flex items-center space-x-2 mt-4">
+                  <Input
+                    placeholder="New tab name"
+                    value={newTabName}
+                    onChange={(e) => setNewTabName(e.target.value)}
+                    className="flex-grow"
+                  />
+                  <Button onClick={handleAddTab} size="icon">
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div>
+              </div>
+
+              {/* Colonne de droite pour le contenu des onglets */}
+              <div className="w-3/4">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  {/* Nouvelle section de filtrage */}
+                  <div className="flex justify-start space-x-2 mb-4">
+                    <Button
+                      variant={taskFilter === 'all' ? 'default' : 'outline'}
+                      onClick={() => setTaskFilter('all')}
+                    >
+                      All
+                    </Button>
+                    <Button
+                      variant={taskFilter === 'pending' ? 'default' : 'outline'}
+                      onClick={() => setTaskFilter('pending')}
+                    >
+                      Pending
+                    </Button>
+                    <Button
+                      variant={taskFilter === 'completed' ? 'default' : 'outline'}
+                      onClick={() => setTaskFilter('completed')}
+                    >
+                      Completed
+                    </Button>
+                  </div>
+
                   {tabs.map((tab) => (
                     <TabsContent key={tab} value={tab}>
                       <div className="space-y-4">
@@ -308,26 +283,13 @@ export function Dashboard() {
                           onChange={(e) => setNewTaskName(e.target.value)}
                           className="flex-grow"
                         />
-                        <Select 
-                          value={tabs.includes(newTaskSpace) ? newTaskSpace : 'All'} 
-                          onValueChange={setNewTaskSpace}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select space" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tabs.map((tab) => (
-                              <SelectItem key={tab} value={tab}>{tab}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                         <Button type="submit">Add Task</Button>
                       </form>
                     </TabsContent>
                   ))}
-                </div>
+                </Tabs>
               </div>
-            </Tabs>
+            </div>
           </CardContent>
         </Card>
       </main>

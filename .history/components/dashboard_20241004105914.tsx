@@ -45,12 +45,10 @@ export function Dashboard() {
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
-      const updatedTabs = [...tabs, newTabName];
-      setTabs(updatedTabs);
-      setTasks(prevTasks => ({ ...prevTasks, [newTabName]: [] }));
-      setActiveTab(newTabName);
-      setNewTaskSpace(newTabName); // Mettre à jour l'espace de la nouvelle tâche
-      setNewTabName('');
+      setTabs([...tabs, newTabName])
+      setTasks({ ...tasks, [newTabName]: [] })
+      setActiveTab(newTabName)
+      setNewTabName('')
     }
   }
 
@@ -308,10 +306,7 @@ export function Dashboard() {
                           onChange={(e) => setNewTaskName(e.target.value)}
                           className="flex-grow"
                         />
-                        <Select 
-                          value={tabs.includes(newTaskSpace) ? newTaskSpace : 'All'} 
-                          onValueChange={setNewTaskSpace}
-                        >
+                        <Select value={newTaskSpace} onValueChange={setNewTaskSpace}>
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select space" />
                           </SelectTrigger>

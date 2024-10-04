@@ -45,12 +45,10 @@ export function Dashboard() {
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
-      const updatedTabs = [...tabs, newTabName];
-      setTabs(updatedTabs);
-      setTasks(prevTasks => ({ ...prevTasks, [newTabName]: [] }));
-      setActiveTab(newTabName);
-      setNewTaskSpace(newTabName); // Mettre à jour l'espace de la nouvelle tâche
-      setNewTabName('');
+      setTabs([...tabs, newTabName])
+      setTasks({ ...tasks, [newTabName]: [] })
+      setActiveTab(newTabName)
+      setNewTabName('')
     }
   }
 
@@ -133,11 +131,6 @@ export function Dashboard() {
       });
   }, [tasks, activeTab, taskFilter]);
 
-  // Mettre à jour newTaskSpace quand activeTab change
-  React.useEffect(() => {
-    setNewTaskSpace(activeTab);
-  }, [activeTab]);
-
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center h-16 px-4 border-b shrink-0 md:px-6">
@@ -208,10 +201,7 @@ export function Dashboard() {
             <CardTitle>Recent Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => {
-              setActiveTab(value);
-              setNewTaskSpace(value); // Mettre à jour newTaskSpace ici aussi
-            }} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex flex-col">
                 <div className="mb-4">
                   <div className="flex justify-between items-center">
@@ -308,10 +298,7 @@ export function Dashboard() {
                           onChange={(e) => setNewTaskName(e.target.value)}
                           className="flex-grow"
                         />
-                        <Select 
-                          value={tabs.includes(newTaskSpace) ? newTaskSpace : 'All'} 
-                          onValueChange={setNewTaskSpace}
-                        >
+                        <Select value={newTaskSpace} onValueChange={setNewTaskSpace}>
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select space" />
                           </SelectTrigger>

@@ -5,21 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X } from "lucide-react"
 
 export function Dashboard() {
   const [tabs, setTabs] = React.useState(['All', 'Work', 'Personal', 'Side Project'])
   const [activeTab, setActiveTab] = React.useState('All')
   const [newTabName, setNewTabName] = React.useState('')
   const [newTaskName, setNewTaskName] = React.useState('')
-  const [newTaskSpace, setNewTaskSpace] = React.useState('All')
   const [tasks, setTasks] = React.useState({
     'All': [
       { id: 1, name: 'Complete project proposal', status: 'pending', category: 'Work', dueDate: 'Due in 2 days' },
@@ -45,12 +37,10 @@ export function Dashboard() {
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
-      const updatedTabs = [...tabs, newTabName];
-      setTabs(updatedTabs);
-      setTasks(prevTasks => ({ ...prevTasks, [newTabName]: [] }));
-      setActiveTab(newTabName);
-      setNewTaskSpace(newTabName); // Mettre à jour l'espace de la nouvelle tâche
-      setNewTabName('');
+      setTabs([...tabs, newTabName])
+      setTasks({ ...tasks, [newTabName]: [] })
+      setActiveTab(newTabName)
+      setNewTabName('')
     }
   }
 
@@ -71,17 +61,14 @@ export function Dashboard() {
         id: Date.now(),
         name: newTaskName,
         status: 'pending',
-        category: newTaskSpace === 'All' ? 'Uncategorized' : newTaskSpace,
+        category: activeTab === 'All' ? 'Uncategorized' : activeTab,
         dueDate: 'Not set'
       }
-      setTasks(prevTasks => {
-        const updatedTasks = { ...prevTasks };
-        if (newTaskSpace !== 'All') {
-          updatedTasks[newTaskSpace] = [...(updatedTasks[newTaskSpace] || []), newTask];
-        }
-        updatedTasks['All'] = [...updatedTasks['All'], newTask];
-        return updatedTasks;
-      })
+      setTasks(prevTasks => ({
+        ...prevTasks,
+        [activeTab]: [...prevTasks[activeTab], newTask],
+        'All': [...prevTasks['All'], newTask]
+      }))
       setNewTaskName('')
     }
   }
@@ -90,16 +77,9 @@ export function Dashboard() {
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
-        updatedTasks[category] = updatedTasks[category]
-          .map(task => 
-            task.id.toString() === taskId ? { ...task, status: newStatus } : task
-          )
-          .sort((a, b) => {
-            // Trier les tâches : pendantes en haut, complétées en bas
-            if (a.status === 'pending' && b.status === 'completed') return -1;
-            if (a.status === 'completed' && b.status === 'pending') return 1;
-            return 0;
-          });
+        updatedTasks[category] = updatedTasks[category].map(task => 
+          task.id.toString() === taskId ? { ...task, status: newStatus } : task
+        );
       }
       return updatedTasks;
     });
@@ -118,25 +98,13 @@ export function Dashboard() {
   const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
 
   const filteredTasks = React.useMemo(() => {
-    return (tasks[activeTab] || [])
-      .filter(task => {
-        if (taskFilter === 'all') return true;
-        if (taskFilter === 'pending') return task.status === 'pending';
-        if (taskFilter === 'completed') return task.status === 'completed';
-        return true;
-      })
-      .sort((a, b) => {
-        // Trier les tâches : pendantes en haut, complétées en bas
-        if (a.status === 'pending' && b.status === 'completed') return -1;
-        if (a.status === 'completed' && b.status === 'pending') return 1;
-        return 0;
-      });
+    return tasks[activeTab]?.filter(task => {
+      if (taskFilter === 'all') return true;
+      if (taskFilter === 'pending') return task.status === 'pending';
+      if (taskFilter === 'completed') return task.status === 'completed';
+      return true;
+    }) || [];
   }, [tasks, activeTab, taskFilter]);
-
-  // Mettre à jour newTaskSpace quand activeTab change
-  React.useEffect(() => {
-    setNewTaskSpace(activeTab);
-  }, [activeTab]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -208,14 +176,11 @@ export function Dashboard() {
             <CardTitle>Recent Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => {
-              setActiveTab(value);
-              setNewTaskSpace(value); // Mettre à jour newTaskSpace ici aussi
-            }} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex flex-col">
                 <div className="mb-4">
                   <div className="flex justify-between items-center">
-                    <TabsList className="flex-grow justify-start">
+                    <TabsList className="flex-grow">
                       {tabs.map((tab) => (
                         <TabsTrigger key={tab} value={tab} className="flex items-center">
                           {tab}
@@ -235,7 +200,7 @@ export function Dashboard() {
                         </TabsTrigger>
                       ))}
                     </TabsList>
-                    <div className="flex items-center space-x-2 ml-4">
+                    <div className="flex items-center space-x-2">
                       <Input
                         placeholder="New tab name"
                         value={newTabName}
@@ -247,7 +212,7 @@ export function Dashboard() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex justify-start mt-2">
+                  <div className="flex justify-end mt-2">
                     <div className="flex items-center space-x-2">
                       <Button
                         size="sm"
@@ -308,19 +273,6 @@ export function Dashboard() {
                           onChange={(e) => setNewTaskName(e.target.value)}
                           className="flex-grow"
                         />
-                        <Select 
-                          value={tabs.includes(newTaskSpace) ? newTaskSpace : 'All'} 
-                          onValueChange={setNewTaskSpace}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select space" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tabs.map((tab) => (
-                              <SelectItem key={tab} value={tab}>{tab}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                         <Button type="submit">Add Task</Button>
                       </form>
                     </TabsContent>
