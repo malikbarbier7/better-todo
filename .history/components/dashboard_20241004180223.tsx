@@ -502,43 +502,48 @@ export function Dashboard() {
                 <div>
                   {tabs.map((tab) => (
                     <TabsContent key={tab.name} value={tab.name}>
-                      <div className="space-y-1">
+                      <div className="space-y-2"> {/* Remis à space-y-2 */}
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center py-1 px-2 rounded-md text-sm"
+                            className="flex items-center p-1 rounded-md h-10" {/* Remis à p-1 et h-10 */}
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
                                 <button 
-                                  className="p-1 bg-green-500 text-white rounded-full"
+                                  className="p-1 bg-green-500 text-white rounded-full no-tap-highlight" {/* Remis à p-1 */}
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
                                 >
-                                  <CheckCircle className="w-3 h-3" />
+                                  <CheckCircle className="w-3 h-3" /> {/* Remis à w-3 h-3 */}
                                 </button>
                               ) : (
                                 <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
+                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center no-tap-highlight" {/* Remis à p-1 */}
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
                                 >
-                                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div> {/* Remis à w-3 h-3 */}
                                 </button>
                               )}
                             </div>
                             <div className="flex items-center w-full">
-                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''}`}>
+                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''} overflow-hidden text-ellipsis whitespace-nowrap text-sm`}>
                                 {task.name}
                               </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[200px]">
+                              <div className="flex items-center justify-end space-x-2 min-w-[300px]">
                                 <span 
-                                  className="text-xs px-1.5 py-0.5 rounded-full"
+                                  className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
                                   style={getCategoryStyle(task.category)}
                                 >
                                   {task.category}
                                 </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDueDate(task.dueDate, true)}
-                                </span>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-xs text-muted-foreground w-48 text-right whitespace-nowrap overflow-hidden text-ellipsis">
+                                    {formatDueDate(task.dueDate, true)}
+                                    {isTaskDueToday(task.dueDate) && (
+                                      <AlertCircle className="inline-block ml-1 w-3 h-3 text-red-500" />
+                                    )}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>

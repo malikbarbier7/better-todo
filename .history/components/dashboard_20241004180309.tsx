@@ -502,26 +502,26 @@ export function Dashboard() {
                 <div>
                   {tabs.map((tab) => (
                     <TabsContent key={tab.name} value={tab.name}>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center py-1 px-2 rounded-md text-sm"
+                            className="flex items-center p-2 rounded-md"
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
                                 <button 
-                                  className="p-1 bg-green-500 text-white rounded-full"
+                                  className="p-2 bg-green-500 text-white rounded-full"
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
                                 >
-                                  <CheckCircle className="w-3 h-3" />
+                                  <CheckCircle className="w-4 h-4" />
                                 </button>
                               ) : (
                                 <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
+                                  className="p-2 border border-gray-300 rounded-full flex items-center justify-center"
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
                                 >
-                                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                                  <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
                                 </button>
                               )}
                             </div>
@@ -531,7 +531,7 @@ export function Dashboard() {
                               </span>
                               <div className="flex items-center justify-end space-x-2 min-w-[200px]">
                                 <span 
-                                  className="text-xs px-1.5 py-0.5 rounded-full"
+                                  className="text-xs px-2 py-1 rounded-full"
                                   style={getCategoryStyle(task.category)}
                                 >
                                   {task.category}

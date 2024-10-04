@@ -502,11 +502,11 @@ export function Dashboard() {
                 <div>
                   {tabs.map((tab) => (
                     <TabsContent key={tab.name} value={tab.name}>
-                      <div className="space-y-1">
+                      <div className="space-y-[1px]">
                         {filteredTasks.map((task) => (
                           <div 
                             key={task.id} 
-                            className="flex items-center py-1 px-2 rounded-md text-sm"
+                            className="flex items-center py-[2px] px-1.5 rounded-md text-sm"
                           >
                             <div className="relative">
                               {task.status === 'completed' ? (
