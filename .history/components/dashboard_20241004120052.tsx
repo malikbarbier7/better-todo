@@ -45,6 +45,7 @@ export function Dashboard() {
   const [taskFilter, setTaskFilter] = React.useState('all')
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
+  const [gold, setGold] = React.useState(0)
 
   const handleAddTab = () => {
     if (newTabName && !tabs.includes(newTabName)) {
@@ -98,8 +99,9 @@ export function Dashboard() {
           .map(task => {
             if (task.id.toString() === taskId) {
               if (task.status === 'pending' && newStatus === 'completed' && !xpGained) {
-                // Task is being completed, gain XP only once
+                // Task is being completed, gain XP and Gold only once
                 gainXP(10);
+                gainGold();
                 xpGained = true;
               }
               return { ...task, status: newStatus };
@@ -118,13 +120,20 @@ export function Dashboard() {
 
   const gainXP = (amount: number) => {
     setXp(prevXP => {
-      const newXP = prevXP + amount;
-      if (newXP >= 100) {
-        setLevel(prevLevel => prevLevel + 1);
-        return newXP - 100;
+      let newXP = prevXP + amount;
+      let newLevel = level;
+      while (newXP >= 100) {
+        newXP -= 100;
+        newLevel += 1;
       }
+      setLevel(newLevel);
       return newXP;
     });
+  };
+
+  const gainGold = () => {
+    const goldEarned = Math.floor(Math.random() * 5) + 1; // Génère un nombre entre 1 et 5
+    setGold(prevGold => prevGold + goldEarned);
   };
 
   // Calculer le nombre total de tâches
@@ -231,8 +240,11 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{level}</div>
-              <Progress value={xp} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-2">XP: {xp}/100</p>
+              <Progress value={(xp / 100) * 100} className="mt-2" />
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-muted-foreground">XP: {xp}/100</p>
+                <p className="text-xs font-semibold text-yellow-600">Gold: {gold}</p>
+              </div>
             </CardContent>
           </Card>
         </div>
