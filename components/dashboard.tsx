@@ -37,7 +37,7 @@ const pasteColors = [
 type Task = {
   id: number;
   name: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'archived';
   category: string;
   dueDate: string; // Store as ISO string
   xpGained: boolean;
@@ -84,7 +84,7 @@ export function Dashboard() {
     ],
   })
 
-  const [taskFilter, setTaskFilter] = React.useState('all')
+  const [taskFilter, setTaskFilter] = React.useState<'all' | 'pending' | 'completed' | 'archived'>('all')
   const [level, setLevel] = React.useState(1)
   const [xp, setXp] = React.useState(0)
   const [gold, setGold] = React.useState(0)
@@ -93,6 +93,7 @@ export function Dashboard() {
   const [isColorPickerOpen, setIsColorPickerOpen] = React.useState(false)
   const [selectedTab, setSelectedTab] = React.useState<string | null>(null);
   const [deletedTasks, setDeletedTasks] = React.useState<Array<any>>([]);
+  const [totalCompletedTasks, setTotalCompletedTasks] = React.useState(0);
 
   const handleAddTab = () => {
     if (newTabName && !tabs.some(tab => tab.name === newTabName)) {
@@ -197,7 +198,7 @@ export function Dashboard() {
   }
 
   const handleTaskStatusChange = (taskId: string, newStatus: 'completed' | 'pending') => {
-    let xpGained = false; // Flag pour s'assurer que l'XP n'est gagné qu'une fois
+    let xpGained = false;
 
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
@@ -207,10 +208,11 @@ export function Dashboard() {
             const completionDate = new Date();
             if (newStatus === 'completed') {
               if (task.status === 'pending' && !task.xpGained && !xpGained) {
-                // Gain XP and gold only once per task completion
                 gainXP(10);
                 gainGold();
-                xpGained = true; // Set the flag to true
+                xpGained = true;
+                // Increment the total completed tasks counter
+                setTotalCompletedTasks(prev => prev + 1);
               }
               return { 
                 ...task, 
@@ -220,7 +222,6 @@ export function Dashboard() {
                 dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
               };
             } else if (newStatus === 'pending') {
-              // Restore the original due date when unchecking
               const originalDueDate = task.dueDate.startsWith('Completed:') 
                 ? task.lastCompletionDate || task.dueDate 
                 : task.dueDate;
@@ -228,7 +229,6 @@ export function Dashboard() {
                 ...task, 
                 status: newStatus,
                 dueDate: originalDueDate
-                // Note: We don't reset xpGained here
               };
             }
           }
@@ -261,14 +261,14 @@ export function Dashboard() {
     setGold(prevGold => prevGold + goldEarned);
   };
 
-  // Calculer le nombre total de tâches
-  const totalTasks = tasks['All'].length;
-
-  // Calculer le nombre de tâches complétées
+  // Calculer le nombre de tâches complétées (excluant les tâches supprimées)
   const completedTasks = tasks['All'].filter(task => task.status === 'completed').length;
 
-  // Calculer le nombre de tâches en attente
-  const pendingTasks = totalTasks - completedTasks;
+  // Calculer le nombre de tâches en attente (excluant les tâches supprimées)
+  const pendingTasks = tasks['All'].filter(task => task.status === 'pending').length;
+
+  // Calculer le nombre total de tâches (excluant les tâches supprimées)
+  const totalTasks = completedTasks + pendingTasks;
 
   // Calculer le taux de complétion
   const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
@@ -276,10 +276,8 @@ export function Dashboard() {
   const filteredTasks = React.useMemo(() => {
     return (tasks[activeTab] || [])
       .filter(task => {
-        if (taskFilter === 'all') return true;
-        if (taskFilter === 'pending') return task.status === 'pending';
-        if (taskFilter === 'completed') return task.status === 'completed';
-        return true;
+        if (taskFilter === 'all') return task.status !== 'archived';
+        return task.status === taskFilter;
       })
       .sort((a, b) => {
         if (a.status === 'pending' && b.status === 'completed') return -1;
@@ -309,13 +307,13 @@ export function Dashboard() {
     }
   };
 
-  const handleCleanCompleted = () => {
+  const handleArchiveCompleted = () => {
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       for (const category in updatedTasks) {
-        const completedTasks = updatedTasks[category].filter(task => task.status === 'completed');
-        setDeletedTasks(prev => [...prev, ...completedTasks]);
-        updatedTasks[category] = updatedTasks[category].filter(task => task.status !== 'completed');
+        updatedTasks[category] = updatedTasks[category].map(task => 
+          task.status === 'completed' ? { ...task, status: 'archived' } : task
+        );
       }
       return updatedTasks;
     });
@@ -362,27 +360,41 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-3">
           {[
-            { title: "Total Tasks", icon: <ListTodo className="w-4 h-4 text-muted-foreground" />, value: totalTasks, description: "Current total tasks" },
-            { title: "Completed Tasks", icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, value: completedTasks, description: "Tasks completed" },
-            { title: "Pending Tasks", icon: <Circle className="w-4 h-4 text-muted-foreground" />, value: pendingTasks, description: "Tasks to be completed" },
-            { title: "Completion Rate", icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />, value: `${completionRate}%`, description: "Of tasks completed" },
-            { title: "Level", icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, value: level, description: `XP: ${xp}/100`, extraContent: (
-              <>
-                <Progress value={(xp / 100) * 100} className="mt-2 h-1.5" />
-                <p className="text-xs font-semibold text-yellow-600 mt-1">Gold: {gold}</p>
-              </>
-            ) },
+            { 
+              title: "Pending Tasks", 
+              icon: <Circle className="w-4 h-4 text-muted-foreground" />, 
+              value: pendingTasks, 
+              description: "Tasks to be completed" 
+            },
+            { 
+              title: "Completed Tasks", 
+              icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, 
+              value: totalCompletedTasks, // Use totalCompletedTasks here
+              description: "Total tasks completed" 
+            },
+            { 
+              title: "Level", 
+              icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, 
+              value: level, 
+              description: `XP: ${xp}/100`, 
+              extraContent: (
+                <>
+                  <Progress value={(xp / 100) * 100} className="mt-1 h-1" />
+                  <p className="text-xs font-semibold text-yellow-600 mt-0.5">Gold: {gold}</p>
+                </>
+              ) 
+            },
           ].map((card, index) => (
             <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-4">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1 px-3">
                 <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
                 {card.icon}
               </CardHeader>
-              <CardContent className="py-2 px-4">
-                <div className="text-xl font-bold">{card.value}</div>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
+              <CardContent className="py-1 px-3">
+                <div className="text-2xl font-bold">{card.value}</div>
+                <p className="text-sm text-muted-foreground">{card.description}</p>
                 {card.extraContent}
               </CardContent>
             </Card>
@@ -405,7 +417,7 @@ export function Dashboard() {
                         <TabsTrigger 
                           key={tab.name} 
                           value={tab.name} 
-                          className="flex items-center mx-1 first:ml-0 last:mr-0 relative"
+                          className="flex items-center mx-1 first:ml-0 relative"
                           style={{ 
                             backgroundColor: activeTab === tab.name ? `${tab.color}10` : 'transparent'
                           }}
@@ -482,7 +494,7 @@ export function Dashboard() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex justify-start mt-2">
+                  <div className="flex justify-between mt-2">
                     <div className="flex items-center space-x-2">
                       <Button
                         size="sm"
@@ -508,11 +520,18 @@ export function Dashboard() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={handleCleanCompleted}
+                        onClick={handleArchiveCompleted}
                       >
-                        Clean All completed tasks
+                        Archive completed tasks
                       </Button>
                     </div>
+                    <Button
+                      size="sm"
+                      variant={taskFilter === 'archived' ? 'default' : 'outline'}
+                      onClick={() => setTaskFilter('archived')}
+                    >
+                      Archived
+                    </Button>
                   </div>
                 </div>
                 <div>
@@ -525,7 +544,9 @@ export function Dashboard() {
                             className="flex items-center py-1 px-2 rounded-md text-sm"
                           >
                             <div className="relative">
-                              {task.status === 'completed' ? (
+                              {task.status === 'archived' ? (
+                                <span className="text-gray-500">Archived</span>
+                              ) : task.status === 'completed' ? (
                                 <button 
                                   className="p-1 bg-green-500 text-white rounded-full"
                                   onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
@@ -541,21 +562,19 @@ export function Dashboard() {
                                 </button>
                               )}
                             </div>
-                            <div className="flex items-center w-full">
-                              <span className={`ml-2 flex-1 ${task.status === 'completed' ? 'line-through' : ''}`}>
-                                {task.name}
+                            <span className={`ml-2 flex-1 ${task.status !== 'pending' ? 'line-through' : ''}`}>
+                              {task.name}
+                            </span>
+                            <div className="flex items-center justify-end space-x-2 min-w-[200px]">
+                              <span 
+                                className="text-xs px-1.5 py-0.5 rounded-full"
+                                style={getCategoryStyle(task.category)}
+                              >
+                                {task.category}
                               </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[200px]">
-                                <span 
-                                  className="text-xs px-1.5 py-0.5 rounded-full"
-                                  style={getCategoryStyle(task.category)}
-                                >
-                                  {task.category}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDueDate(task.dueDate, true)}
-                                </span>
-                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDueDate(task.dueDate, true)}
+                              </span>
                             </div>
                           </div>
                         ))}
