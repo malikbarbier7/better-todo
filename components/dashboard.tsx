@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle, User } from "lucide-react"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle, User, LogOut } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -387,11 +387,17 @@ export function Dashboard() {
             </li>
           </ul>
         </nav>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" asChild>
             <Link href="/profile">
               <User className="w-4 h-4" />
               <span className="sr-only">View profile</span>
+            </Link>
+          </Button>
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/">
+              <LogOut className="w-4 h-4" />
+              <span className="sr-only">Log out</span>
             </Link>
           </Button>
         </div>
