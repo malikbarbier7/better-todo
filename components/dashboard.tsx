@@ -41,6 +41,7 @@ type Task = {
   category: string;
   dueDate: string; // Store as ISO string
   xpGained: boolean;
+  lastCompletionDate?: string;
 }
 
 type Tab = {
@@ -119,6 +120,10 @@ export function Dashboard() {
 
   const formatDueDate = (date: string, forDisplay: boolean = false) => {
     try {
+      if (date.startsWith('Completed: ')) {
+        return date; // Retournez la chaîne telle quelle si elle commence par "Completed: "
+      }
+      
       let dueDate: Date;
       
       // Essayez d'abord de parser comme une date ISO
@@ -198,21 +203,31 @@ export function Dashboard() {
       Object.keys(updatedTasks).forEach(category => {
         updatedTasks[category] = updatedTasks[category].map(task => {
           if (task.id.toString() === taskId) {
+            const completionDate = new Date();
             if (task.status === 'pending' && newStatus === 'completed' && !task.xpGained) {
               if (!xpGained) {
                 gainXP(10);
                 gainGold();
                 xpGained = true;
               }
-              const completionDate = new Date();
               return { 
                 ...task, 
                 status: newStatus, 
                 xpGained: true, 
+                lastCompletionDate: completionDate.toISOString(),
                 dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
               };
             } else if (newStatus === 'pending') {
-              return { ...task, status: newStatus, dueDate: 'Not set' };
+              // Ici, nous restaurons la date d'échéance originale
+              const originalDueDate = task.dueDate.startsWith('Completed:') 
+                ? task.lastCompletionDate || task.dueDate 
+                : task.dueDate;
+              return { 
+                ...task, 
+                status: newStatus,
+                xpGained: false, // Réinitialiser xpGained
+                dueDate: originalDueDate
+              };
             }
             return { ...task, status: newStatus };
           }
