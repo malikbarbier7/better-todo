@@ -197,18 +197,20 @@ export function Dashboard() {
   }
 
   const handleTaskStatusChange = (taskId: string, newStatus: 'completed' | 'pending') => {
-    let xpGained = false;
+    let xpGained = false; // Flag pour s'assurer que l'XP n'est gagné qu'une fois
+
     setTasks(prevTasks => {
       const updatedTasks = { ...prevTasks };
       Object.keys(updatedTasks).forEach(category => {
         updatedTasks[category] = updatedTasks[category].map(task => {
           if (task.id.toString() === taskId) {
             const completionDate = new Date();
-            if (task.status === 'pending' && newStatus === 'completed' && !task.xpGained) {
-              if (!xpGained) {
+            if (newStatus === 'completed') {
+              if (task.status === 'pending' && !task.xpGained && !xpGained) {
+                // Gain XP and gold only once per task completion
                 gainXP(10);
                 gainGold();
-                xpGained = true;
+                xpGained = true; // Set the flag to true
               }
               return { 
                 ...task, 
@@ -218,18 +220,17 @@ export function Dashboard() {
                 dueDate: `Completed: ${format(completionDate, "yyyy/MM/dd HH:mm")}`
               };
             } else if (newStatus === 'pending') {
-              // Ici, nous restaurons la date d'échéance originale
+              // Restore the original due date when unchecking
               const originalDueDate = task.dueDate.startsWith('Completed:') 
                 ? task.lastCompletionDate || task.dueDate 
                 : task.dueDate;
               return { 
                 ...task, 
                 status: newStatus,
-                xpGained: false, // Réinitialiser xpGained
                 dueDate: originalDueDate
+                // Note: We don't reset xpGained here
               };
             }
-            return { ...task, status: newStatus };
           }
           return task;
         }).sort((a, b) => {
