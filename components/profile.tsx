@@ -37,15 +37,11 @@ export function Profile() {
           <ul className="flex items-center gap-4 text-sm font-medium">
             <li className="flex items-center gap-2">
               <ListTodo className="w-4 h-4" />
-              <span>Todo App</span>
+              <span className="font-bold">Better Todo</span>
             </li>
           </ul>
         </nav>
-        <div className="flex items-center gap-4 md:gap-2 lg:gap-4">
-          <Button variant="outline" size="icon">
-            <CalendarDays className="w-4 h-4" />
-            <span className="sr-only">View calendar</span>
-          </Button>
+        <div className="flex items-center">
           <Button variant="outline" size="icon" asChild>
             <Link href="/dashboard">
               <Home className="w-4 h-4" />

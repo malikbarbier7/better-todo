@@ -20,9 +20,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isValid, differenceInDays, parse } from "date-fns"
+import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isValid, differenceInDays, parse, startOfYear, endOfYear, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useEffect, useState } from 'react'
 
 const pasteColors = [
   '#FF6B6B', // Rouge légèrement pâle
@@ -95,6 +96,43 @@ export function Dashboard() {
   const [selectedTab, setSelectedTab] = React.useState<string | null>(null);
   const [deletedTasks, setDeletedTasks] = React.useState<Array<any>>([]);
   const [totalCompletedTasks, setTotalCompletedTasks] = React.useState(0);
+  const [timeProgress, setTimeProgress] = useState({
+    year: 0,
+    week: 0,
+    day: 0,
+  })
+
+  useEffect(() => {
+    const updateTimeProgress = () => {
+      const now = new Date() // Ceci utilise déjà l'heure locale de l'utilisateur
+
+      // Année
+      const currentStartOfYear = startOfYear(now)
+      const currentEndOfYear = endOfYear(now)
+      const yearProgress = ((now.getTime() - currentStartOfYear.getTime()) / (currentEndOfYear.getTime() - currentStartOfYear.getTime())) * 100
+
+      // Semaine
+      const currentStartOfWeek = startOfWeek(now, { weekStartsOn: 1 }) // Commence la semaine le lundi
+      const currentEndOfWeek = endOfWeek(now, { weekStartsOn: 1 })
+      const weekProgress = ((now.getTime() - currentStartOfWeek.getTime()) / (currentEndOfWeek.getTime() - currentStartOfWeek.getTime())) * 100
+
+      // Jour
+      const currentStartOfDay = startOfDay(now)
+      const currentEndOfDay = endOfDay(now)
+      const dayProgress = ((now.getTime() - currentStartOfDay.getTime()) / (currentEndOfDay.getTime() - currentStartOfDay.getTime())) * 100
+
+      setTimeProgress({
+        year: yearProgress,
+        week: weekProgress,
+        day: dayProgress,
+      })
+    }
+
+    updateTimeProgress()
+    const intervalId = setInterval(updateTimeProgress, 60000) // Mise à jour toutes les minutes
+
+    return () => clearInterval(intervalId)
+  }, [])
 
   const handleAddTab = () => {
     if (newTabName && !tabs.some(tab => tab.name === newTabName)) {
@@ -359,7 +397,7 @@ export function Dashboard() {
         </div>
       </header>
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           {[
             { 
               title: "Pending Tasks", 
@@ -370,7 +408,7 @@ export function Dashboard() {
             { 
               title: "Completed Tasks", 
               icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, 
-              value: totalCompletedTasks, // Use totalCompletedTasks here
+              value: totalCompletedTasks,
               description: "Total tasks completed" 
             },
             { 
@@ -385,6 +423,29 @@ export function Dashboard() {
                 </>
               ) 
             },
+            {
+              title: "Time Left",
+              icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />,
+              value: null,
+              description: null,
+              extraContent: (
+                <div className="space-y-2">
+                  {[
+                    { label: "Year", progress: timeProgress.year },
+                    { label: "Week", progress: timeProgress.week },
+                    { label: "Day", progress: timeProgress.day },
+                  ].map((item) => (
+                    <div key={item.label} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span>{item.label}</span>
+                        <span>{Math.round(item.progress)}%</span>
+                      </div>
+                      <Progress value={item.progress} className="h-1" />
+                    </div>
+                  ))}
+                </div>
+              )
+            },
           ].map((card, index) => (
             <Card key={index} className="overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1 px-3">
@@ -392,8 +453,12 @@ export function Dashboard() {
                 {card.icon}
               </CardHeader>
               <CardContent className="py-1 px-3">
-                <div className="text-2xl font-bold">{card.value}</div>
-                <p className="text-sm text-muted-foreground">{card.description}</p>
+                {card.value !== null && (
+                  <div className="text-2xl font-bold">{card.value}</div>
+                )}
+                {card.description && (
+                  <p className="text-sm text-muted-foreground">{card.description}</p>
+                )}
                 {card.extraContent}
               </CardContent>
             </Card>
