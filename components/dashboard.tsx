@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle } from "lucide-react"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle, User } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/popover"
 import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isValid, differenceInDays, parse } from "date-fns"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 const pasteColors = [
   '#FF6B6B', // Rouge légèrement pâle
@@ -348,14 +349,12 @@ export function Dashboard() {
             </li>
           </ul>
         </nav>
-        <div className="flex items-center gap-4 md:gap-2 lg:gap-4">
-          <Button variant="outline" size="icon">
-            <CalendarDays className="w-4 h-4" />
-            <span className="sr-only">View calendar</span>
-          </Button>
-          <Button variant="outline" size="icon">
-            <PlusCircle className="w-4 h-4" />
-            <span className="sr-only">Create new task</span>
+        <div className="flex items-center">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/profile">
+              <User className="w-4 h-4" />
+              <span className="sr-only">View profile</span>
+            </Link>
           </Button>
         </div>
       </header>
