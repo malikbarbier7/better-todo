@@ -1,6 +1,6 @@
 # Better Todo
 
-Building the to-do app I've always dreamed about. This project aims to create a simple, minimalist to-do app that addresses the shortcomings of existing, overly complicated task management solutions.
+Building the to-do app I've always dreamed about. This project aims to create a simple, minimalist to-do app that addresses the shortcomings of existing, overly complicated task management solutions. Using Nextjs. Shadcn/ui. Tailwind.
 
 ## Why Better Todo?
 
