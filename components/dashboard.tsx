@@ -561,7 +561,7 @@ export function Dashboard() {
             <ul className="flex items-center gap-4 text-sm font-medium">
               <li className="flex items-center gap-2">
                 <ListTodo className="w-4 h-4" />
-                <span className="font-bold">Better Todo</span>
+                <span className="font-bold">Simple To Do</span>
               </li>
             </ul>
           </nav>

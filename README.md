@@ -1,10 +1,10 @@
-# Better Todo
+# Simple To Do
 
 Building the to-do app I've always dreamed about. This project aims to create a simple, minimalist to-do app that addresses the shortcomings of existing, overly complicated task management solutions. Using Nextjs. Shadcn/ui. Tailwind.
 
-## Why Better Todo?
+## Why Simple To Do?
 
-Most to-do list apps on the market are packed with features that often overcomplicate the simple task of managing your daily activities. Better Todo takes a different approach:
+Most to-do list apps on the market are packed with features that often overcomplicate the simple task of managing your daily activities. Simple To Do takes a different approach:
 
 - **Simplicity First**: A clean, minimalist interface that puts your tasks front and center.
 - **All-in-One View**: See all your tasks in one place, helping you achieve more without switching between multiple views or categories.

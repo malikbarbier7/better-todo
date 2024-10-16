@@ -19,7 +19,7 @@ export function LandingPage() {
       <header className="w-full px-4 lg:px-6 h-14 flex items-center">
         <Link className="flex items-center justify-center" href="#">
           <ListTodo className="h-6 w-6 mr-2" />
-          <span className="font-bold">Better Todo</span>
+          <span className="font-bold">Simple To Do</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/features">
@@ -42,7 +42,7 @@ export function LandingPage() {
                 Get More Done, Achieve Your Goals
                 </h1>
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                Streamline your life with Better Todo by bringing together everyday tasks, personal priorities, work to-dos, and upcoming projects in one clear overview.
+                Streamline your life with Simple To Do by bringing together everyday tasks, personal priorities, work to-dos, and upcoming projects in one clear overview.
                 </p>
               </div>
               <div className="space-x-4">
@@ -54,7 +54,7 @@ export function LandingPage() {
               <div className="w-full max-w-3xl mt-8">
                 <Image
                   src="/placeholder.svg?height=400&width=800"
-                  alt="Better Todo App Interface"
+                  alt="Simple To Do App Interface"
                   width={800}
                   height={400}
                   className="rounded-lg shadow-xl"
@@ -176,7 +176,7 @@ export function LandingPage() {
         </section>
       </main>
       <footer className="w-full flex flex-col gap-2 sm:flex-row py-6 shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-gray-500 dark:text-gray-400">© 2024 Better Todo. All rights reserved.</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">© 2024 Simple To Do. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link className="text-xs hover:underline underline-offset-4" href="#">
             Terms of Service
