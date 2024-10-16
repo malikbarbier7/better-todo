@@ -24,6 +24,8 @@ import { format, formatDistanceToNow, isToday, parseISO, isPast, isFuture, isVal
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useEffect, useState } from 'react'
+import { useDrag, useDrop, DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 
 const pasteColors = [
   '#FF6B6B', // Rouge légèrement pâle
@@ -54,6 +56,11 @@ type Tab = {
 type Tasks = {
   [key: string]: Task[];
 }
+
+// Define a type for the draggable item
+const ItemType = {
+  TAB: 'tab',
+};
 
 export function Dashboard() {
   const [tabs, setTabs] = React.useState<Tab[]>([
@@ -376,332 +383,381 @@ export function Dashboard() {
     };
   };
 
+  const moveTab = (dragIndex: number, hoverIndex: number) => {
+    const draggedTab = tabs[dragIndex];
+    const updatedTabs = [...tabs];
+    updatedTabs.splice(dragIndex, 1);
+    updatedTabs.splice(hoverIndex, 0, draggedTab);
+    setTabs(updatedTabs);
+  };
+
+  const Tab = ({ tab, index }: { tab: Tab; index: number }) => {
+    const ref = React.useRef<HTMLDivElement>(null);
+
+    const [, drop] = useDrop({
+      accept: ItemType.TAB,
+      hover(item: { index: number }) {
+        if (!ref.current || tab.name === 'All') return; // Prevent "All" tab from being moved
+        const dragIndex = item.index;
+        const hoverIndex = index;
+        if (dragIndex === hoverIndex) return;
+        moveTab(dragIndex, hoverIndex);
+        item.index = hoverIndex;
+      },
+    });
+
+    const [{ isDragging }, drag] = useDrag({
+      type: ItemType.TAB,
+      item: { index },
+      canDrag: tab.name !== 'All', // Prevent "All" tab from being draggable
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+
+    if (tab.name !== 'All') {
+      drag(drop(ref));
+    } else {
+      drop(ref); // Only apply drop for "All" tab
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={`flex items-center justify-between mx-1 first:ml-0 relative ${tab.name === 'All' ? 'px-3' : 'px-2'} text-sm font-medium`}
+        style={{
+          backgroundColor: activeTab === tab.name ? `${tab.color}10` : 'transparent',
+          opacity: isDragging ? 0.5 : 1,
+          minWidth: '80px',
+        }}
+        onClick={() => {
+          setActiveTab(tab.name);
+          setSelectedTab(tab.name);
+        }}
+      >
+        <span className="flex-grow text-center">{tab.name}</span>
+        {tab.name !== 'All' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-2 h-4 w-4 flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveTab(tab.name);
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300 ease-in-out"
+          style={{
+            backgroundColor: tab.color,
+            opacity: activeTab === tab.name ? 1 : 0.3,
+            transform: `scaleX(${activeTab === tab.name ? 1 : 0.7})`,
+          }}
+        />
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="flex items-center h-16 px-4 border-b shrink-0 md:px-6">
-        <nav className="flex-1">
-          <ul className="flex items-center gap-4 text-sm font-medium">
-            <li className="flex items-center gap-2">
-              <ListTodo className="w-4 h-4" />
-              <span className="font-bold">Better Todo</span>
-            </li>
-          </ul>
-        </nav>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/profile">
-              <User className="w-4 h-4" />
-              <span className="sr-only">View profile</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/">
-              <LogOut className="w-4 h-4" />
-              <span className="sr-only">Log out</span>
-            </Link>
-          </Button>
-        </div>
-      </header>
-      <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-4">
-          {[
-            { 
-              title: "Pending Tasks", 
-              icon: <Circle className="w-4 h-4 text-muted-foreground" />, 
-              value: pendingTasks, 
-              description: "Tasks to be completed" 
-            },
-            { 
-              title: "Completed Tasks", 
-              icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, 
-              value: totalCompletedTasks,
-              description: "Total tasks completed" 
-            },
-            { 
-              title: "Level", 
-              icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, 
-              value: level, 
-              description: `XP: ${xp}/100`, 
-              extraContent: (
-                <>
-                  <Progress value={(xp / 100) * 100} className="mt-1 h-1" />
-                  <p className="text-xs font-semibold text-yellow-600 mt-0.5">Gold: {gold}</p>
-                </>
-              ) 
-            },
-            {
-              title: "Time Left",
-              icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />,
-              value: null,
-              description: null,
-              extraContent: (
-                <div className="space-y-2">
-                  {[
-                    { label: "Year", progress: timeProgress.year },
-                    { label: "Week", progress: timeProgress.week },
-                    { label: "Day", progress: timeProgress.day },
-                  ].map((item) => (
-                    <div key={item.label} className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span>{item.label}</span>
-                        <span>{Math.round(item.progress)}%</span>
+    <DndProvider backend={HTML5Backend}>
+      <div className="flex flex-col min-h-screen">
+        <header className="flex items-center h-16 px-4 border-b shrink-0 md:px-6">
+          <nav className="flex-1">
+            <ul className="flex items-center gap-4 text-sm font-medium">
+              <li className="flex items-center gap-2">
+                <ListTodo className="w-4 h-4" />
+                <span className="font-bold">Better Todo</span>
+              </li>
+            </ul>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/profile">
+                <User className="w-4 h-4" />
+                <span className="sr-only">View profile</span>
+              </Link>
+            </Button>
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/">
+                <LogOut className="w-4 h-4" />
+                <span className="sr-only">Log out</span>
+              </Link>
+            </Button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="grid gap-3 md:grid-cols-4">
+            {[
+              { 
+                title: "Pending Tasks", 
+                icon: <Circle className="w-4 h-4 text-muted-foreground" />, 
+                value: pendingTasks, 
+                description: "Tasks to be completed" 
+              },
+              { 
+                title: "Completed Tasks", 
+                icon: <CheckCircle className="w-4 h-4 text-muted-foreground" />, 
+                value: totalCompletedTasks,
+                description: "Total tasks completed" 
+              },
+              { 
+                title: "Level", 
+                icon: <TrendingUp className="w-4 h-4 text-muted-foreground" />, 
+                value: level, 
+                description: `XP: ${xp}/100`, 
+                extraContent: (
+                  <>
+                    <Progress value={(xp / 100) * 100} className="mt-1 h-1" />
+                    <p className="text-xs font-semibold text-yellow-600 mt-0.5">Gold: {gold}</p>
+                  </>
+                ) 
+              },
+              {
+                title: "Time Left",
+                icon: <CalendarDays className="w-4 h-4 text-muted-foreground" />,
+                value: null,
+                description: null,
+                extraContent: (
+                  <div className="space-y-2">
+                    {[
+                      { label: "Year", progress: timeProgress.year },
+                      { label: "Week", progress: timeProgress.week },
+                      { label: "Day", progress: timeProgress.day },
+                    ].map((item) => (
+                      <div key={item.label} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span>{item.label}</span>
+                          <span>{Math.round(item.progress)}%</span>
+                        </div>
+                        <Progress value={item.progress} className="h-1" />
                       </div>
-                      <Progress value={item.progress} className="h-1" />
-                    </div>
-                  ))}
-                </div>
-              )
-            },
-          ].map((card, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1 px-3">
-                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                {card.icon}
-              </CardHeader>
-              <CardContent className="py-1 px-3">
-                {card.value !== null && (
-                  <div className="text-2xl font-bold">{card.value}</div>
-                )}
-                {card.description && (
-                  <p className="text-sm text-muted-foreground">{card.description}</p>
-                )}
-                {card.extraContent}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Recent Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => {
-              setActiveTab(value);
-              setNewTaskSpace(value); // Mettre  jour newTaskSpace ici aussi
-            }} className="w-full">
-              <div className="flex flex-col">
-                <div className="mb-4">
-                  <div className="flex justify-between items-center">
-                    <TabsList className="flex-grow justify-start">
-                      {tabs.map((tab) => (
-                        <TabsTrigger 
-                          key={tab.name} 
-                          value={tab.name} 
-                          className="flex items-center mx-1 first:ml-0 relative"
-                          style={{ 
-                            backgroundColor: activeTab === tab.name ? `${tab.color}10` : 'transparent'
-                          }}
-                          onClick={() => setSelectedTab(tab.name)}
-                        >
-                          {tab.name}
-                          {tab.name !== 'All' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="ml-2 h-4 w-4"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveTab(tab.name)
-                              }}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300 ease-in-out"
-                            style={{ 
-                              backgroundColor: tab.color,
-                              opacity: activeTab === tab.name ? 1 : 0,
-                              transform: `scaleX(${activeTab === tab.name ? 1 : 0})`
-                            }}
-                          />
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddTab();
-                      }}>
-                        <Input
-                          placeholder="New tab name"
-                          value={newTabName}
-                          onChange={(e) => setNewTabName(e.target.value)}
-                          className="w-32"
-                        />
-                      </form>
-                      <Popover open={isColorPickerOpen} onOpenChange={setIsColorPickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            style={{ backgroundColor: selectedTab && selectedTab !== 'All' ? tabs.find(t => t.name === selectedTab)?.color : newTabColor }} 
-                            className="w-6 h-6 rounded-full p-0"
-                            onClick={() => setIsColorPickerOpen(true)}
-                            disabled={selectedTab === 'All'}
-                          />
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-1">
-                          <div className="grid grid-cols-4 gap-1">
-                            {pasteColors.map((color) => (
-                              <Button
-                                key={color}
-                                style={{ backgroundColor: color }}
-                                className="w-5 h-5 rounded-full p-0"
-                                onClick={() => {
-                                  if (selectedTab && selectedTab !== 'All') {
-                                    handleTabColorChange(color);
-                                  } else {
-                                    setNewTabColor(color);
-                                    setIsColorPickerOpen(false);
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <Button onClick={handleAddTab} size="icon">
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between mt-2">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'all' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('all')}
-                      >
-                        All
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'pending' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('pending')}
-                      >
-                        Pending
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={taskFilter === 'completed' ? 'default' : 'outline'}
-                        onClick={() => setTaskFilter('completed')}
-                      >
-                        Completed
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={handleArchiveCompleted}
-                      >
-                        Archive completed tasks
-                      </Button>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={taskFilter === 'archived' ? 'default' : 'outline'}
-                      onClick={() => setTaskFilter('archived')}
-                    >
-                      Archived
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  {tabs.map((tab) => (
-                    <TabsContent key={tab.name} value={tab.name}>
-                      <div className="space-y-1">
-                        {filteredTasks.map((task) => (
-                          <div 
-                            key={task.id} 
-                            className="flex items-center py-1 px-2 rounded-md text-sm"
-                          >
-                            <div className="relative">
-                              {task.status === 'archived' ? (
-                                <span className="text-gray-500">Archived</span>
-                              ) : task.status === 'completed' ? (
-                                <button 
-                                  className="p-1 bg-green-500 text-white rounded-full"
-                                  onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
-                                >
-                                  <CheckCircle className="w-3 h-3" />
-                                </button>
-                              ) : (
-                                <button 
-                                  className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
-                                  onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
-                                >
-                                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                                </button>
-                              )}
-                            </div>
-                            <span className={`ml-2 flex-1 ${task.status !== 'pending' ? 'line-through' : ''}`}>
-                              {task.name}
-                            </span>
-                            <div className="flex items-center justify-end space-x-2 min-w-[200px]">
-                              <span 
-                                className="text-xs px-1.5 py-0.5 rounded-full"
-                                style={getCategoryStyle(task.category)}
-                              >
-                                {task.category}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatDueDate(task.dueDate, true)}
-                              </span>
-                            </div>
-                          </div>
+                )
+              },
+            ].map((card, index) => (
+              <Card key={index} className="overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1 px-3">
+                  <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                  {card.icon}
+                </CardHeader>
+                <CardContent className="py-1 px-3">
+                  {card.value !== null && (
+                    <div className="text-2xl font-bold">{card.value}</div>
+                  )}
+                  {card.description && (
+                    <p className="text-sm text-muted-foreground">{card.description}</p>
+                  )}
+                  {card.extraContent}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Recent Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={(value) => {
+                setActiveTab(value);
+                setNewTaskSpace(value);
+              }} className="w-full">
+                <div className="flex flex-col">
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center">
+                      <TabsList className="flex-grow justify-start">
+                        {tabs.map((tab, index) => (
+                          <Tab key={tab.name} tab={tab} index={index} />
                         ))}
-                      </div>
-                      <form onSubmit={handleAddTask} className="mt-4 flex items-center space-x-2">
-                        <Input
-                          placeholder="Add a new task"
-                          value={newTaskName}
-                          onChange={(e) => setNewTaskName(e.target.value)}
-                          className="flex-grow"
-                        />
-                        <Select 
-                          value={tabs.some(tab => tab.name === newTaskSpace) ? newTaskSpace : 'All'} 
-                          onValueChange={setNewTaskSpace}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select space" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tabs.map((tab) => (
-                              <SelectItem key={tab.name} value={tab.name}>{tab.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                      </TabsList>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          handleAddTab();
+                        }}>
+                          <Input
+                            placeholder="New tab name"
+                            value={newTabName}
+                            onChange={(e) => setNewTabName(e.target.value)}
+                            className="w-32"
+                          />
+                        </form>
+                        <Popover open={isColorPickerOpen} onOpenChange={setIsColorPickerOpen}>
                           <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[180px] justify-start text-left font-normal",
-                                !newTaskDueDate && "text-muted-foreground"
-                              )}
-                              onClick={() => setIsDatePickerOpen(true)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {newTaskDueDate ? formatDueDate(newTaskDueDate.toISOString(), true) : <span>Set due date</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={newTaskDueDate}
-                              onSelect={handleDateSelect}
-                              initialFocus
+                            <Button 
+                              style={{ backgroundColor: selectedTab && selectedTab !== 'All' ? tabs.find(t => t.name === selectedTab)?.color : newTabColor }} 
+                              className="w-6 h-6 rounded-full p-0"
+                              onClick={() => setIsColorPickerOpen(true)}
+                              disabled={selectedTab === 'All'}
                             />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-1">
+                            <div className="grid grid-cols-4 gap-1">
+                              {pasteColors.map((color) => (
+                                <Button
+                                  key={color}
+                                  style={{ backgroundColor: color }}
+                                  className="w-5 h-5 rounded-full p-0"
+                                  onClick={() => {
+                                    if (selectedTab && selectedTab !== 'All') {
+                                      handleTabColorChange(color);
+                                    } else {
+                                      setNewTabColor(color);
+                                      setIsColorPickerOpen(false);
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </PopoverContent>
                         </Popover>
-                        <Button type="submit">Add Task</Button>
-                      </form>
-                    </TabsContent>
-                  ))}
+                        <Button onClick={handleAddTab} size="icon">
+                          <PlusCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant={taskFilter === 'all' ? 'default' : 'outline'}
+                          onClick={() => setTaskFilter('all')}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={taskFilter === 'pending' ? 'default' : 'outline'}
+                          onClick={() => setTaskFilter('pending')}
+                        >
+                          Pending
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={taskFilter === 'completed' ? 'default' : 'outline'}
+                          onClick={() => setTaskFilter('completed')}
+                        >
+                          Completed
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleArchiveCompleted}
+                        >
+                          Archive completed tasks
+                        </Button>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={taskFilter === 'archived' ? 'default' : 'outline'}
+                        onClick={() => setTaskFilter('archived')}
+                      >
+                        Archived
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    {tabs.map((tab) => (
+                      <TabsContent key={tab.name} value={tab.name}>
+                        <div className="space-y-1">
+                          {filteredTasks.map((task) => (
+                            <div 
+                              key={task.id} 
+                              className="flex items-center py-1 px-2 rounded-md text-sm"
+                            >
+                              <div className="relative">
+                                {task.status === 'archived' ? (
+                                  <span className="text-gray-500">Archived</span>
+                                ) : task.status === 'completed' ? (
+                                  <button 
+                                    className="p-1 bg-green-500 text-white rounded-full"
+                                    onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
+                                  >
+                                    <CheckCircle className="w-3 h-3" />
+                                  </button>
+                                ) : (
+                                  <button 
+                                    className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
+                                    onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
+                                  >
+                                    <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                                  </button>
+                                )}
+                              </div>
+                              <span className={`ml-2 flex-1 ${task.status !== 'pending' ? 'line-through' : ''}`}>
+                                {task.name}
+                              </span>
+                              <div className="flex items-center justify-end space-x-2 min-w-[200px]">
+                                <span 
+                                  className="text-xs px-1.5 py-0.5 rounded-full"
+                                  style={getCategoryStyle(task.category)}
+                                >
+                                  {task.category}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDueDate(task.dueDate, true)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <form onSubmit={handleAddTask} className="mt-4 flex items-center space-x-2">
+                          <Input
+                            placeholder="Add a new task"
+                            value={newTaskName}
+                            onChange={(e) => setNewTaskName(e.target.value)}
+                            className="flex-grow"
+                          />
+                          <Select 
+                            value={tabs.some(tab => tab.name === newTaskSpace) ? newTaskSpace : 'All'} 
+                            onValueChange={setNewTaskSpace}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Select space" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {tabs.map((tab) => (
+                                <SelectItem key={tab.name} value={tab.name}>{tab.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-[180px] justify-start text-left font-normal",
+                                  !newTaskDueDate && "text-muted-foreground"
+                                )}
+                                onClick={() => setIsDatePickerOpen(true)}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {newTaskDueDate ? formatDueDate(newTaskDueDate.toISOString(), true) : <span>Set due date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={newTaskDueDate}
+                                onSelect={handleDateSelect}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <Button type="submit">Add Task</Button>
+                        </form>
+                      </TabsContent>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  )
+              </Tabs>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </DndProvider>
+  );
 }
