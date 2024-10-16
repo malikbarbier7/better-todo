@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle, User, LogOut } from "lucide-react"
+import { CalendarDays, CheckCircle, Circle, ListTodo, PlusCircle, X, ChevronDown, TrendingUp, Calendar as CalendarIcon, AlertCircle, User, LogOut, Play, Pause, RotateCcw } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -109,6 +109,12 @@ export function Dashboard() {
     week: 0,
     day: 0,
   })
+  const [pomodoroTime, setPomodoroTime] = useState(25 * 60); // 25 minutes in seconds
+  const [isRunning, setIsRunning] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [isBreak, setIsBreak] = useState(false);
+  const [totalSessions, setTotalSessions] = useState(4);
+  const [pomodoroDuration, setPomodoroDuration] = useState(25); // Default duration in minutes
 
   useEffect(() => {
     const updateTimeProgress = () => {
@@ -141,6 +147,62 @@ export function Dashboard() {
 
     return () => clearInterval(intervalId)
   }, [])
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRunning && pomodoroTime > 0) {
+      interval = setInterval(() => {
+        setPomodoroTime((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (pomodoroTime === 0) {
+      handleSessionEnd();
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, pomodoroTime]);
+
+  const handleSessionEnd = () => {
+    setIsRunning(false);
+    setIsBreak(true);
+    const newSessionCount = (sessionCount + 1) % totalSessions;
+    setSessionCount(newSessionCount);
+    
+    if (newSessionCount === 0) {
+      // This is the end of the 4th session (now becoming the 1st of the next set)
+      setPomodoroTime(15 * 60); // 15 minutes long break
+    } else if (newSessionCount % 3 === 0) {
+      setPomodoroTime(5 * 60); // 5 minutes short break
+    } else {
+      setPomodoroTime(25 * 60); // Reset to 25 minutes for the next work session
+    }
+  };
+
+  const handleSetPomodoroDuration = (minutes: number) => {
+    setPomodoroTime(minutes * 60);
+    setPomodoroDuration(minutes);
+    setIsBreak(false);
+  };
+
+  const startPomodoro = () => {
+    setIsRunning(true);
+    setIsBreak(false);
+  };
+
+  const togglePomodoroTimer = () => {
+    setIsRunning(!isRunning);
+  };
+
+  const resetPomodoro = () => {
+    setIsRunning(false);
+    setPomodoroTime(25 * 60);
+    setSessionCount(0);
+    setIsBreak(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleAddTab = () => {
     if (newTabName && !tabs.some(tab => tab.name === newTabName)) {
@@ -553,6 +615,12 @@ export function Dashboard() {
     );
   };
 
+  const startBreak = () => {
+    setPomodoroTime(5 * 60); // 5 minutes break
+    setIsRunning(true);
+    setIsBreak(true);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col min-h-screen">
@@ -581,7 +649,7 @@ export function Dashboard() {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-5">
             {[
               { 
                 title: "Pending Tasks", 
@@ -628,6 +696,35 @@ export function Dashboard() {
                       </div>
                     ))}
                   </div>
+                )
+              },
+              {
+                title: "Pomodoro",
+                icon: <RotateCcw className="w-4 h-4 text-muted-foreground cursor-pointer" onClick={resetPomodoro} />,
+                value: null,
+                description: null,
+                extraContent: (
+                  <>
+                    <div className="text-3xl font-bold text-center mb-2">{formatTime(pomodoroTime)}</div>
+                    <div className="grid grid-cols-4 gap-1 mb-2">
+                      <Button size="sm" variant="outline" onClick={() => handleSetPomodoroDuration(25)}>25m</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleSetPomodoroDuration(35)}>35m</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleSetPomodoroDuration(45)}>45m</Button>
+                      <Button size="sm" variant="outline" onClick={startBreak}>Rest</Button>
+                    </div>
+                    <div className="flex justify-center">
+                      <Button onClick={isRunning ? togglePomodoroTimer : startPomodoro} className="w-full">
+                        {isRunning ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                        {isRunning ? 'Pause' : 'Start'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      {isBreak 
+                        ? (sessionCount === 0 ? 'Long Break!' : 'Short Break!') 
+                        : `Session ${sessionCount + 1} / ${totalSessions}`
+                      }
+                    </p>
+                  </>
                 )
               },
             ].map((card, index) => (
