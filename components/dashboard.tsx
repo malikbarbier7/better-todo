@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -58,8 +58,9 @@ type Tasks = {
 }
 
 // Define a type for the draggable item
-const ItemType = {
+const ItemTypes = {
   TAB: 'tab',
+  TASK: 'task'
 };
 
 export function Dashboard() {
@@ -391,11 +392,102 @@ export function Dashboard() {
     setTabs(updatedTabs);
   };
 
+  const moveTask = (dragIndex: number, hoverIndex: number) => {
+    setTasks(prevTasks => {
+      const updatedTasks = { ...prevTasks };
+      const currentTabTasks = [...updatedTasks[activeTab]];
+      const [reorderedItem] = currentTabTasks.splice(dragIndex, 1);
+      currentTabTasks.splice(hoverIndex, 0, reorderedItem);
+      updatedTasks[activeTab] = currentTabTasks;
+      return updatedTasks;
+    });
+  };
+
+  const DraggableTask = ({ task, index }: { task: Task; index: number }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const [, drop] = useDrop({
+      accept: ItemTypes.TASK,
+      hover(item: { index: number }, monitor) {
+        if (!ref.current) {
+          return;
+        }
+        const dragIndex = item.index;
+        const hoverIndex = index;
+        if (dragIndex === hoverIndex) {
+          return;
+        }
+        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const clientOffset = monitor.getClientOffset();
+        const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
+        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+          return;
+        }
+        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+          return;
+        }
+        moveTask(dragIndex, hoverIndex);
+        item.index = hoverIndex;
+      },
+    });
+
+    const [{ isDragging }, drag] = useDrag({
+      type: ItemTypes.TASK,
+      item: { index },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+
+    drag(drop(ref));
+
+    return (
+      <div 
+        ref={ref}
+        className={`flex items-center py-1 px-2 rounded-md text-sm ${isDragging ? 'opacity-50' : ''}`}
+      >
+        <div className="relative">
+          {task.status === 'archived' ? (
+            <span className="text-gray-500">Archived</span>
+          ) : task.status === 'completed' ? (
+            <button 
+              className="p-1 bg-green-500 text-white rounded-full"
+              onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
+            >
+              <CheckCircle className="w-3 h-3" />
+            </button>
+          ) : (
+            <button 
+              className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
+              onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
+            >
+              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+            </button>
+          )}
+        </div>
+        <span className={`ml-2 flex-1 ${task.status !== 'pending' ? 'line-through' : ''}`}>
+          {task.name}
+        </span>
+        <div className="flex items-center justify-end space-x-2 min-w-[200px]">
+          <span 
+            className="text-xs px-1.5 py-0.5 rounded-full"
+            style={getCategoryStyle(task.category)}
+          >
+            {task.category}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {formatDueDate(task.dueDate, true)}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   const Tab = ({ tab, index }: { tab: Tab; index: number }) => {
     const ref = React.useRef<HTMLDivElement>(null);
 
     const [, drop] = useDrop({
-      accept: ItemType.TAB,
+      accept: ItemTypes.TAB,
       hover(item: { index: number }) {
         if (!ref.current || tab.name === 'All') return; // Prevent "All" tab from being moved
         const dragIndex = item.index;
@@ -407,7 +499,7 @@ export function Dashboard() {
     });
 
     const [{ isDragging }, drag] = useDrag({
-      type: ItemType.TAB,
+      type: ItemTypes.TAB,
       item: { index },
       canDrag: tab.name !== 'All', // Prevent "All" tab from being draggable
       collect: (monitor) => ({
@@ -663,45 +755,8 @@ export function Dashboard() {
                     {tabs.map((tab) => (
                       <TabsContent key={tab.name} value={tab.name}>
                         <div className="space-y-1">
-                          {filteredTasks.map((task) => (
-                            <div 
-                              key={task.id} 
-                              className="flex items-center py-1 px-2 rounded-md text-sm"
-                            >
-                              <div className="relative">
-                                {task.status === 'archived' ? (
-                                  <span className="text-gray-500">Archived</span>
-                                ) : task.status === 'completed' ? (
-                                  <button 
-                                    className="p-1 bg-green-500 text-white rounded-full"
-                                    onClick={() => handleTaskStatusChange(task.id.toString(), 'pending')}
-                                  >
-                                    <CheckCircle className="w-3 h-3" />
-                                  </button>
-                                ) : (
-                                  <button 
-                                    className="p-1 border border-gray-300 rounded-full flex items-center justify-center"
-                                    onClick={() => handleTaskStatusChange(task.id.toString(), 'completed')}
-                                  >
-                                    <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                                  </button>
-                                )}
-                              </div>
-                              <span className={`ml-2 flex-1 ${task.status !== 'pending' ? 'line-through' : ''}`}>
-                                {task.name}
-                              </span>
-                              <div className="flex items-center justify-end space-x-2 min-w-[200px]">
-                                <span 
-                                  className="text-xs px-1.5 py-0.5 rounded-full"
-                                  style={getCategoryStyle(task.category)}
-                                >
-                                  {task.category}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDueDate(task.dueDate, true)}
-                                </span>
-                              </div>
-                            </div>
+                          {filteredTasks.map((task, index) => (
+                            <DraggableTask key={task.id} task={task} index={index} />
                           ))}
                         </div>
                         <form onSubmit={handleAddTask} className="mt-4 flex items-center space-x-2">

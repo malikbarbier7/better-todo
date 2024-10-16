@@ -70,7 +70,7 @@ export function PricingPageComponent() {
                   <CardDescription>Flexible month-to-month plan</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold">€5</div>
+                  <div className="text-4xl font-bold">€4</div>
                   <p className="text-sm text-gray-500 mt-2">per month</p>
                   <ul className="mt-4 space-y-2">
                     <li className="flex items-center">
@@ -97,7 +97,7 @@ export function PricingPageComponent() {
                   <CardDescription>Get unlimited access forever</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold">€99</div>
+                  <div className="text-4xl font-bold">€54</div>
                   <p className="text-sm text-gray-500 mt-2">per month, billed annually</p>
                   <ul className="mt-4 space-y-2">
                     <li className="flex items-center">
