@@ -46,7 +46,9 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="space-x-4">
-                <Button>Get Started</Button>
+                <Button asChild>
+                  <Link href="/dashboard">Get Started</Link>
+                </Button>
                 <Button variant="outline" asChild>
                   <Link href="/features-page">Learn More</Link>
                 </Button>
@@ -170,7 +172,9 @@ export function LandingPage() {
                   Join thousands of users who have simplified their lives with our minimalist to-do app.
                 </p>
               </div>
-              <Button size="lg" className="mt-4">Start Your Free Trial</Button>
+              <Button size="lg" className="mt-4" asChild>
+                <Link href="/dashboard">Start Your Free Trial</Link>
+              </Button>
             </div>
           </div>
         </section>
