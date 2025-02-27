@@ -55,8 +55,8 @@ export function LandingPage() {
               </div>
               <div className="w-full max-w-3xl mt-8">
                 <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Simple To Do App Interface"
+                  src="/img/hero.png"
+                  alt="Description of your actual image"
                   width={800}
                   height={400}
                   className="rounded-lg shadow-xl"
